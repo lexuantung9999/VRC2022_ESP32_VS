@@ -28,12 +28,15 @@ void setup() {
   //config ps2:
   int err = -1;
   for(int i=0; i<10; i++){
-    delay(100);
-    err = VRC_PS2. config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
+    delay(1000);
+    err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
     Serial. print(".");
-    if(!err)  break;
+    if(!err){
+      Serial.println("Sucsessfully Connect PS2 Controller!");
+      break;
+    }
   }
-  Serial.println("Sucsessfully Connect PS2 Controller!");
+  
 
 } 
 
@@ -58,4 +61,3 @@ void loop() {
   
 
 }
-

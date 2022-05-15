@@ -6,10 +6,10 @@
 #define PS2_CMD 13 //MOSI  23
 #define PS2_SEL 15 //SS     5
 #define PS2_CLK 14 //SLK   18
-//#define pressures   true
-#define pressures   false
-//#define rumble      true
-#define rumble      false
+#define pressures   true
+//#define pressures   false
+#define rumble      true
+//#define rumble      false
 
 
 //GPIO input output expansion

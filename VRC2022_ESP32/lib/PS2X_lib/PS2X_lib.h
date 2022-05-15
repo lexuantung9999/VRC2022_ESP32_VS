@@ -78,7 +78,7 @@ GNU General Public License for more details.
 //#define PS2X_COM_DEBUG
 
 #ifndef PS2X_lib_h
-#define PS2X_lib_h
+  #define PS2X_lib_h
 
 #if ARDUINO > 22
   #include "Arduino.h"
@@ -95,7 +95,7 @@ GNU General Public License for more details.
   #define CTRL_CLK        4
   #define CTRL_BYTE_DELAY 3
 #else
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
   #define CTRL_CLK        5
   #define CTRL_CLK_HIGH   5
   #define CTRL_BYTE_DELAY 18
@@ -217,7 +217,7 @@ class PS2X {
       uint8_t _dat_mask; 
       volatile uint8_t *_dat_ireg;
     #else
-    #ifdef ESP8266
+    #if defined(ESP8266) || defined(ESP32)
       int _clk_pin;
       int _cmd_pin;
       int _att_pin;
