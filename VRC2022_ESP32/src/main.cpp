@@ -40,6 +40,7 @@ void loop() {
   //example reading ps2:
   
   VRC_PS2.read_gamepad(0, 0);
+  //Hold L1 button to reading analog of joystick
   if(VRC_PS2.Button(PSB_L1)){
     sprintf(PS2_text,"RY: %d RX: %d LY: %d LX: %d",VRC_PS2.Analog(PSS_RY),VRC_PS2.Analog(PSS_RX),VRC_PS2.Analog(PSS_LY),VRC_PS2.Analog(PSS_LX));
     Serial.println(PS2_text);
