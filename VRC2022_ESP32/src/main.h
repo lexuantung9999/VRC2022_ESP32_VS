@@ -11,4 +11,15 @@
 //#define rumble      true
 #define rumble      false
 
+
+//GPIO input output expansion
+#define MAX_END_STOP 25     // using for lift endstop
+#define MID_END_STOP 32
+#define MIN_END_STOP 36
+#define ANOTHER1    0       // modify your name pin define here
+#define ANOTHER2    2
+#define ANOTHER3    39
+
+
+
 #endif

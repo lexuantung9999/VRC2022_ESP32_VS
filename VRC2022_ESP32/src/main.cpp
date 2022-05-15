@@ -10,11 +10,20 @@ Servo_Motor VRC_Servo;
 PS2X        VRC_PS2;
 char PS2_text[100];
 
+/*!
+  *  @brief  Config IO pin, endstop pin, another pin, ...
+*/
+void GPIO_config(){
+  pinMode(MAX_END_STOP, INPUT_PULLUP); pinMode(MID_END_STOP, INPUT_PULLUP); pinMode(MID_END_STOP, INPUT_PULLUP);
+  pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   VRC_Motor.Init();
   VRC_Servo.Init();
+  GPIO_config();
 
   //config ps2:
   int err = -1;
