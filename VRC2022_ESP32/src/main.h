@@ -20,6 +20,22 @@
 #define ANOTHER2    2
 #define ANOTHER3    39
 
+//mid joystick has value: 128 -> offset it to safe in control
+#define NOISE_J_UP      140
+#define NOISE_J_DOWN    116
 
+#define MAX_PWM 4096
+#define MIN_PWM 50
+
+#define LEFT_MOTOR      1
+#define RIGHT_MOTOR     2
+#define LIFT_MOTOR      3
+#define ROTATE_MOTOR    4
+
+#define PICK_UP_SERVO1   3
+#define PICK_UP_SERVO2   4
+
+#define SERVO1  1
+#define SERVO2  2
 
 #endif

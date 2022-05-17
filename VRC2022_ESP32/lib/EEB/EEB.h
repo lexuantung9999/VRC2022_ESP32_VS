@@ -3,6 +3,7 @@
 
 // This library define I/O of ESP32 Expansion Board (EEB), made by tunglx
 // IO control dirrection of motor 
+// Kinematics of different drive robot
 #if ARDUINO > 22
   #include "Arduino.h"
 #else
@@ -40,6 +41,7 @@
 
 #define Motor_FREQ  50
 #define Clock_PCA9685 27000000
+
 class DCMotor
 {
 private:
@@ -49,7 +51,6 @@ private:
 
 public:
     void Init();
-    
     /*!
     *  @brief  Note: motor 4 using lift mechanism and motor 3 using rotate mechanism
     *  @param  motor_number number of motor
@@ -58,8 +59,18 @@ public:
     */
     void Run(int motor_number, int16_t pwm_input, bool dir); 
     
+    /*!
+    *  @brief  Stop lift
+    */
     void Stop(int motor_number);
-    void Lift(int status, int pwm_input); //up, down or stop
+
+      /*!
+    *  @brief  Note: motor 4 using lift mechanism and motor 3 using rotate mechanism
+    *  @param  motor_number number of motor
+    *  @param  status: LIFT_UP, LIFT_DOWN or LIFT_STOP
+    *  @param  pwm_input pwm to control motor, 0-4096
+    */
+    void Lift(int motor_number, int status, int16_t pwm_input); //up, down or stop
 };
 
 
@@ -79,7 +90,9 @@ public:
     *  @param  servo_num  number of servo  
     */
    void Angle(int angle, int servo_num);  
+   void Stop(int servo_num);
 
 };
+
 
 #endif
