@@ -7,6 +7,7 @@
 #include <malloc.h>
 #include <math.h>
 
+
 DCMotor     VRC_Motor;
 Servo_Motor VRC_Servo;
 PS2X        VRC_PS2;
@@ -22,12 +23,26 @@ void GPIO_config(){
   pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
 }
 
+TimerHandle_t xTimers[1]; // using 1 timer
+
+void vTimerCallback(TimerHandle_t xTimer){
+    configASSERT(xTimer);
+    int ulCount = (uint32_t) pvTimerGetTimerID(xTimer);
+    if(ulCount==0){
+       VRC_PS2.read_gamepad(0, 0);
+    }
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   VRC_Motor.Init();
   VRC_Servo.Init();
   GPIO_config();
+
+  // Timer config
+  xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
+  xTimerStart(xTimers[0],0);
 
   //config ps2:
   int err = -1;
@@ -40,16 +55,12 @@ void setup() {
       break;
     }
   }
+
 } 
 
 void VRC_Control(){
-  VRC_PS2.read_gamepad(0, 0);
-  if(VRC_PS2.Button(PSB_L2)){
-    // int val_RY, val_RX, val_LY, val_LX;
-    // val_RY = VRC_PS2.Analog(PSS_RY); 
-    // // val_RX = VRC_PS2.Analog(PSS_RX);
-    // // val_LY = VRC_PS2.Analog(PSS_LY); 
-    // val_LX = VRC_PS2.Analog(PSS_LX);
+  
+  // if(VRC_PS2.Button(PSB_L2)){
     
     // val_RY = map(val_RY,0,255,4096,-4096);
     // val_LX = map(val_LX,0,255,4096,-4096);
@@ -72,24 +83,26 @@ void VRC_Control(){
     // else {
     //   dir_right =1; pwm_right = -pwm_right;
     // }
-    // sprintf(PS2_text,"pwm_left: %d, dir_left: %d  pwm_right: %d, dir_right: %d",pwm_left,dir_left,pwm_right,dir_right);
-    // Serial.println(PS2_text);
-      if(VRC_PS2.Analog(PSS_RY)<100){
-          VRC_Motor.Run(LEFT_MOTOR,2500,0);
-          VRC_Motor.Run(RIGHT_MOTOR,2500,0);
-      }
+    //sprintf(PS2_text,"pwm_left: %d, dir_left: %d  pwm_right: %d, dir_right: %d",pwm_left,dir_left,pwm_right,dir_right);
+    sprintf(PS2_text,"RX: %d, LX: %d  RY: %d, LY: %d",VRC_PS2.Analog(PSS_RX),VRC_PS2.Analog(PSS_LX),VRC_PS2.Analog(PSS_RY),VRC_PS2.Analog(PSS_LY));
+    //sprintf(PS2_text,"tri: %d, cros: %d, sqr: %d, circ: %d", VRC_PS2.Button(PSB_TRIANGLE),VRC_PS2.Button(PSB_CROSS),VRC_PS2.Button(PSB_SQUARE),VRC_PS2.Button(PSB_CIRCLE));
+    Serial.println(PS2_text);
+  //     if(VRC_PS2.Analog(PSS_RY)<100){
+  //         VRC_Motor.Run(LEFT_MOTOR,2500,0);
+  //         VRC_Motor.Run(RIGHT_MOTOR,2500,0);
+  //     }
 
-      if(VRC_PS2.Analog(PSS_RY)>135){
-          VRC_Motor.Run(LEFT_MOTOR,2500,1);
-          VRC_Motor.Run(RIGHT_MOTOR,2500,1);
-      }
-  }
+  //     if(VRC_PS2.Analog(PSS_RY)>135){
+  //         VRC_Motor.Run(LEFT_MOTOR,2500,1);
+  //         VRC_Motor.Run(RIGHT_MOTOR,2500,1);
+  //     }
+  //  }
 
-  else if (VRC_PS2.ButtonReleased(PSB_L2)){
-    pwm_left =0; pwm_right =0; dir_left=0; dir_right=0;
-    VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-    VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
-  }
+  // else if (VRC_PS2.ButtonReleased(PSB_L2)){
+  //   pwm_left =0; pwm_right =0; dir_left=0; dir_right=0;
+  //   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+  // }
 
   // VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
   // VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
@@ -126,7 +139,6 @@ void VRC_Control(){
   //   Serial.println("Lift stop");
   // }
 
-  
 }
 void loop() {
   // put your main code here, to run repeatedly:
@@ -142,13 +154,6 @@ void loop() {
   // delay(2000);
   // VRC_Motor.Run(LEFT_MOTOR,2500,0);
   // delay(2000);
-
-  //Hold L1 button to reading analog of joystick
-  // if(VRC_PS2.Button(PSB_L1)){
-  //   sprintf(PS2_text,"RY: %d RX: %d LY: %d LX: %d",VRC_PS2.Analog(PSS_RY),VRC_PS2.Analog(PSS_RX),VRC_PS2.Analog(PSS_LY),VRC_PS2.Analog(PSS_LX));
-  //   Serial.println(PS2_text);
-  //   delay(200);
-  // }
   
   VRC_Control();
 }

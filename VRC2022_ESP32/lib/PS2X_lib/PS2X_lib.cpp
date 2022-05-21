@@ -86,7 +86,7 @@ void PS2X::read_gamepad() {
 boolean PS2X::read_gamepad(boolean motor1, byte motor2) {
    double temp = millis() - last_read;
 
-   if (temp > 1500) //waited to long
+   if (temp > 500) //waited to long
       reconfig_gamepad();
 
    if(temp < read_delay)  //waited too short
