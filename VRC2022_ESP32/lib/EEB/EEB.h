@@ -94,5 +94,5 @@ public:
 
 };
 
-
+void scan_i2c();
 #endif

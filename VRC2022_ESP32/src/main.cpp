@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <EEB.h>
-#include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <main.h>
 #include <PS2X_lib.h>
 #include <malloc.h>
 #include <math.h>
 #include <FastLED.h>
+#include <MPU6050.h>
+#include <I2Cdev.h>
 
 #define GAMEPAD_LOG_INFO  0
 
@@ -14,10 +15,11 @@
 #define NUM_LEDS         10
 
 
-DCMotor     VRC_Motor;
-Servo_Motor VRC_Servo;
-PS2X        VRC_PS2;
-CRGB        leds[NUM_LEDS];
+DCMotor         VRC_Motor;
+Servo_Motor     VRC_Servo;
+PS2X            VRC_PS2;
+CRGB            VRC_leds[NUM_LEDS];
+MPU6050         VRC_MPU6050;
 
 char PS2_text[100];
 int16_t pwm_left, pwm_right;
@@ -58,8 +60,12 @@ void setup() {
   VRC_Servo.Init();
   GPIO_config();
   
+  // MPU config
+  VRC_MPU6050.initialize();
+  VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
+  VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
   // led config
-  FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
 
   // Timer config
   xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
@@ -84,7 +90,7 @@ void setup() {
 
 void led_random_test(void){
   for(int i=0;i<10;i++){
-    leds[i] = CRGB(random(0,255), random(0,255), random(0,255));
+    VRC_leds[i] = CRGB(random(0,255), random(0,255), random(0,255));
     FastLED.show();
     delay(100);
   }
@@ -183,11 +189,28 @@ void VRC_Control(){
   }
 
 }
+
+int16_t ax, ay, az, gx, gy, gz;
 void loop() {
   // put your main code here, to run repeatedly:
   //VRC_Control();
 
   // VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
   // VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+
+  // VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
+  // Serial.print(PS2_text);
+  // delay(500);
+
   
+  // VRC_MPU6050.Read_gyro();
+  // sprintf(PS2_text,"Gyro: gx: %f, gy: %f  gz: %f \n",VRC_MPU6050.GyroX,VRC_MPU6050.GyroY,VRC_MPU6050.GyroZ);
+  // Serial.print(PS2_text);
+
+  //scan_i2c();
 }
+
+
+
+
