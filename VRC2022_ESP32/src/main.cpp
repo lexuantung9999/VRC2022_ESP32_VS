@@ -11,7 +11,7 @@
 
 #define GAMEPAD_LOG_INFO  0
 
-#define LED_PIN          2
+#define LED_PIN          26
 #define NUM_LEDS         10
 
 
@@ -106,11 +106,11 @@ void VRC_Control(){
 
     // loc nhieu
     if(val_RY>=NOISE_J_UP || val_RY<=NOISE_J_DOWN){
-      val_RY = map(val_RY,0,255,4096,-4096);
+      val_RY = map(val_RY,0,255,MAX_PWM,-MAX_PWM);
     }
     else val_RY = 0;
     if(val_LX>=NOISE_J_UP || val_LX<=NOISE_J_DOWN){
-      val_LX = map(val_LX,0,255,4096,-4096);
+      val_LX = map(val_LX,0,255,MAX_PWM,-MAX_PWM);
     }
     else val_LX=0;
 
@@ -174,12 +174,12 @@ void VRC_Control(){
 
 
   if(VRC_PS2.Button(PSB_PAD_UP)){
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4096);
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
     Serial.println("Lift up");
   }
 
   if(VRC_PS2.Button(PSB_PAD_DOWN)){
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4096);
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
     Serial.println("Lift down");
   }
 
@@ -193,22 +193,24 @@ void VRC_Control(){
 int16_t ax, ay, az, gx, gy, gz;
 void loop() {
   // put your main code here, to run repeatedly:
-  //VRC_Control();
+  VRC_Control();
 
-  // VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-  // VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+  VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+  VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
 
   // VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
   // Serial.print(PS2_text);
   // delay(500);
 
-  
+
   // VRC_MPU6050.Read_gyro();
   // sprintf(PS2_text,"Gyro: gx: %f, gy: %f  gz: %f \n",VRC_MPU6050.GyroX,VRC_MPU6050.GyroY,VRC_MPU6050.GyroZ);
   // Serial.print(PS2_text);
 
   //scan_i2c();
+
+  //led_random_test();
 }
 
 

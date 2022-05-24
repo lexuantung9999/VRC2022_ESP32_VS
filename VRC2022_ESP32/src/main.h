@@ -1,6 +1,20 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
+
+//pin can be used GPIO, define your code here
+/*
+#define  pin1      18
+#define  pin2      19
+#define  pin3      23
+#define  pin4      5
+#define  pin5      27
+#define  pin6      26
+#define  pin7      33
+#define  pin8      34
+#define  pin9      35
+
+*/
 //define pin to communicate with PS2 
 #define PS2_DAT 12 //MISO  19
 #define PS2_CMD 13 //MOSI  23
@@ -24,7 +38,7 @@
 #define NOISE_J_UP      140
 #define NOISE_J_DOWN    116
 
-#define MAX_PWM 4000
+#define MAX_PWM 1000
 #define MIN_PWM 50
 
 #define LEFT_MOTOR      1
