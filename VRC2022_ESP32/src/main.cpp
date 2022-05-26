@@ -98,25 +98,24 @@ void led_random_test(void){
 
 void VRC_Control(){
   
-  if(VRC_PS2.Button(PSB_L2)){
-    int16_t val_RY, val_LX;
+    int16_t val_RY, val_RX;
 
     val_RY = VRC_PS2.Analog(PSS_RY);
-    val_LX = VRC_PS2.Analog(PSS_LX);
+    val_RX = VRC_PS2.Analog(PSS_RX);
 
     // loc nhieu
     if(val_RY>=NOISE_J_UP || val_RY<=NOISE_J_DOWN){
       val_RY = map(val_RY,0,255,MAX_PWM,-MAX_PWM);
     }
     else val_RY = 0;
-    if(val_LX>=NOISE_J_UP || val_LX<=NOISE_J_DOWN){
-      val_LX = map(val_LX,0,255,MAX_PWM,-MAX_PWM);
+    if(val_RX>=NOISE_J_UP || val_RX<=NOISE_J_DOWN){
+      val_RX = map(val_RX,0,255,MAX_PWM,-MAX_PWM);
     }
-    else val_LX=0;
+    else val_RX=0;
 
     // tinh toan
-    pwm_left = val_RY - val_LX;
-    pwm_right = val_RY + val_LX;
+    pwm_left = val_RY - val_RX;
+    pwm_right = val_RY + val_RX;
 
     if(abs(pwm_left)<=MIN_PWM) pwm_left = 0;
     if(abs(pwm_right)<=MIN_PWM) pwm_right = 0;
@@ -133,11 +132,8 @@ void VRC_Control(){
     else {
       dir_right =1; pwm_right = -pwm_right;
     }
-  }
 
-  else if (VRC_PS2.ButtonReleased(PSB_L2)){
-    pwm_left =0; pwm_right =0; dir_left=0; dir_right=0;
-  }
+
   
   #if GAMEPAD_LOG_INFO
     sprintf(PS2_text,"pwm_left: %d, dir_left: %d  pwm_right: %d, dir_right: %d \n",pwm_left,dir_left,pwm_right,dir_right);
@@ -148,21 +144,21 @@ void VRC_Control(){
     Serial.println(PS2_text);
   #endif 
 
-  if(VRC_PS2.Analog(PSS_LY)<=NOISE_J_DOWN){
+  if(VRC_PS2.ButtonPressed(PSB_L2)){
     //Pick up box
     VRC_Servo.Angle(180,PICK_UP_SERVO1);
     VRC_Servo.Angle(0,PICK_UP_SERVO2);
     stt_servo = 1;
     //Serial.println("Pick up box");
   }
-  else if(VRC_PS2.Analog(PSS_LY)>=NOISE_J_UP){
+  else if(VRC_PS2.ButtonPressed(PSB_R2)){
     //Remove box
     VRC_Servo.Angle(0,PICK_UP_SERVO1);
     VRC_Servo.Angle(180,PICK_UP_SERVO2);
     stt_servo = -1;
     //Serial.println("Remove box");
   }
-  else {
+  else if(VRC_PS2.ButtonPressed(PSB_CROSS)) {
     if(stt_servo!=0){
       VRC_Servo.Stop(PICK_UP_SERVO1); 
       VRC_Servo.Stop(PICK_UP_SERVO2); 
@@ -173,17 +169,17 @@ void VRC_Control(){
   }
 
 
-  if(VRC_PS2.Button(PSB_PAD_UP)){
+  if(VRC_PS2.ButtonPressed(PSB_PAD_UP)){
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
     Serial.println("Lift up");
   }
 
-  if(VRC_PS2.Button(PSB_PAD_DOWN)){
+  if(VRC_PS2.ButtonPressed(PSB_PAD_DOWN)){
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
     Serial.println("Lift down");
   }
 
-  if(VRC_PS2.ButtonReleased(PSB_PAD_UP)||VRC_PS2.ButtonReleased(PSB_PAD_DOWN)){
+  if(VRC_PS2.ButtonPressed(PSB_SQUARE)){
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
     Serial.println("Lift stop");
   }

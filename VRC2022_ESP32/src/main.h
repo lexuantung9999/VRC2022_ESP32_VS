@@ -38,7 +38,7 @@
 #define NOISE_J_UP      140
 #define NOISE_J_DOWN    116
 
-#define MAX_PWM 1000
+#define MAX_PWM 800
 #define MIN_PWM 50
 
 #define LEFT_MOTOR      1
