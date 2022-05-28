@@ -27,12 +27,16 @@
 
 
 //GPIO input output expansion
-#define MAX_END_STOP 25     // using for lift endstop
-#define MID_END_STOP 32
-#define MIN_END_STOP 36
-#define ANOTHER1    0       // modify your name pin define here
-#define ANOTHER2    2
-#define ANOTHER3    39
+#define MAX_END_STOP 26     // using for lift endstop
+#define MIN_END_STOP 27
+#define ANOTHER1   5       // modify your name pin define here
+#define ANOTHER2   23
+#define ANOTHER3   19
+
+//LED
+#define LED_PIN          19
+#define NUM_LEDS         10
+
 
 //mid joystick has value: 128 -> offset it to safe in control
 #define NOISE_J_UP      140
@@ -51,5 +55,10 @@
 
 #define SERVO1  1
 #define SERVO2  2
+
+// lift status
+#define LIFT_UP     1
+#define LIFT_DOWN   -1
+#define LIFT_STOP   0
 
 #endif

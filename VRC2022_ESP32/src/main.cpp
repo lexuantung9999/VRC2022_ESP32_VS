@@ -11,10 +11,6 @@
 
 #define GAMEPAD_LOG_INFO  0
 
-#define LED_PIN          26
-#define NUM_LEDS         10
-
-
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
 PS2X            VRC_PS2;
@@ -25,11 +21,12 @@ char PS2_text[100];
 int16_t pwm_left, pwm_right;
 bool dir_left, dir_right;
 int stt_servo =0;
+int lift_stt = 0;
 /*!
   *  @brief  Config IO pin, endstop pin, another pin, ...
 */
 void GPIO_config(){
-  pinMode(MAX_END_STOP, INPUT_PULLUP); pinMode(MID_END_STOP, INPUT_PULLUP); pinMode(MID_END_STOP, INPUT_PULLUP);
+  pinMode(MAX_END_STOP, INPUT_PULLUP); pinMode(MIN_END_STOP, INPUT_PULLUP); 
   pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
 }
 
@@ -53,41 +50,6 @@ void vTimerCallback(TimerHandle_t xTimer){
     // }
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  VRC_Motor.Init();
-  VRC_Servo.Init();
-  GPIO_config();
-  
-  // MPU config
-  VRC_MPU6050.initialize();
-  VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
-  VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-  // led config
-  FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
-
-  // Timer config
-  xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
-  xTimerStart(xTimers[0],0);
-  
-  // xTimers[ 1 ] = xTimerCreate("Task2",pdMS_TO_TICKS(1000),pdTRUE,( void * ) 0,vTimerCallback);
-  // xTimerStart(xTimers[0],0);
-
-  //config ps2:
-  int err = -1;
-  for(int i=0; i<10; i++){
-    delay(1000);
-    err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
-    Serial. print(".");
-    if(!err){
-      Serial.println("Sucsessfully Connect PS2 Controller!");
-      break;
-    }
-  }
-
-} 
-
 void led_random_test(void){
   for(int i=0;i<10;i++){
     VRC_leds[i] = CRGB(random(0,255), random(0,255), random(0,255));
@@ -95,6 +57,7 @@ void led_random_test(void){
     delay(100);
   }
 }
+
 
 void VRC_Control(){
   
@@ -170,21 +133,86 @@ void VRC_Control(){
 
 
   if(VRC_PS2.ButtonPressed(PSB_PAD_UP)){
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
-    Serial.println("Lift up");
+    if(digitalRead(MAX_END_STOP) != 0){
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
+      Serial.println("Lift up");
+      lift_stt = LIFT_UP;
+    }
   }
 
   if(VRC_PS2.ButtonPressed(PSB_PAD_DOWN)){
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
-    Serial.println("Lift down");
+    if(digitalRead(MIN_END_STOP) != 0){
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
+      Serial.println("Lift down");
+      lift_stt = LIFT_DOWN;
+    }
   }
 
   if(VRC_PS2.ButtonPressed(PSB_SQUARE)){
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
     Serial.println("Lift stop");
+    lift_stt = LIFT_STOP;
   }
 
+  if(lift_stt==1){
+    if(digitalRead(MAX_END_STOP)==0){
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+      Serial.println("Lift stop");
+      lift_stt = LIFT_STOP;
+    }
+  }
+
+  if(lift_stt==-1){
+    if(digitalRead(MIN_END_STOP)==0){
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+      Serial.println("Lift stop");
+      lift_stt = LIFT_STOP;
+    }
+  }
 }
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  VRC_Motor.Init();
+  VRC_Servo.Init();
+  GPIO_config();
+  
+  // MPU config
+  VRC_MPU6050.initialize();
+  VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
+  VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+  // led config
+  FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
+
+  // Timer config
+  xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
+  xTimerStart(xTimers[0],0);
+  
+  // xTimers[ 1 ] = xTimerCreate("Task2",pdMS_TO_TICKS(1000),pdTRUE,( void * ) 0,vTimerCallback);
+  // xTimerStart(xTimers[0],0);
+
+  //config ps2:
+  int err = -1;
+
+  led_random_test();
+
+  for(int i=0; i<10; i++){
+    delay(1000);
+    err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
+    Serial. print(".");
+    if(!err){
+      Serial.println("Sucsessfully Connect PS2 Controller!");
+      break;
+    }
+  }
+  
+  for(int i=0;i<10;i++){
+    VRC_leds[i] = CRGB(0,255,0);
+    FastLED.show();
+  }
+
+} 
 
 int16_t ax, ay, az, gx, gy, gz;
 void loop() {
