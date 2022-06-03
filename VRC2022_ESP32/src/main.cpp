@@ -42,7 +42,6 @@ void vTimerCallback(TimerHandle_t xTimer){
        // Task 1
        VRC_PS2.read_gamepad(0, 0);
     }
-
     // if(ulCount==1){
     //    /*
     //    Task2
@@ -168,6 +167,15 @@ void VRC_Control(){
       Serial.println("Lift stop");
       lift_stt = LIFT_STOP;
     }
+  }
+
+  if(VRC_PS2.ButtonPressed(PSB_L1)){
+    //Rotate windmill
+    VRC_Motor.Run(ROTATE_MOTOR,4000,1);
+  }
+  else if(VRC_PS2.ButtonPressed(PSB_R1)){
+    //Stop windmill
+    VRC_Motor.Stop(ROTATE_MOTOR);
   }
 }
 
