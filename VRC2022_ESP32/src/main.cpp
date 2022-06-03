@@ -131,8 +131,14 @@ void VRC_Control(){
     else val_RX=0;
 
     // tinh toan
-    pwm_left = val_RY - val_RX;
-    pwm_right = val_RY + val_RX;
+    if(val_RY>=0){
+        pwm_left = val_RY - val_RX;
+        pwm_right = val_RY + val_RX;
+    }
+    else{
+       pwm_left = val_RY + val_RX;
+       pwm_right = val_RY - val_RX; 
+    }
 
     if(abs(pwm_left)<=MIN_PWM) pwm_left = 0;
     if(abs(pwm_right)<=MIN_PWM) pwm_right = 0;
@@ -143,11 +149,13 @@ void VRC_Control(){
 
     if(pwm_left >=0) dir_left =0;
     else {
-      dir_left =1; pwm_left = -pwm_left;
+      dir_left =1; 
+      pwm_left = -pwm_left;
     }
     if(pwm_right >=0) dir_right =0;
     else {
-      dir_right =1; pwm_right = -pwm_right;
+      dir_right =1; 
+      pwm_right = -pwm_right;
     }
 
 
