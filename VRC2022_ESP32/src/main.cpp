@@ -30,9 +30,47 @@ void GPIO_config(){
   pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
 }
 
+int16_t raw_ax, raw_ay, raw_az, raw_gx, raw_gy, raw_gz;
+float ax, ay, az, gx, gy, gz;
+float off_set_ax, off_set_ay, off_set_az;
+float off_set_gx, off_set_gy, off_set_gz;
+float angle_gyro_x, angle_gyro_y, angle_gyro_z;
+float angle_acc_x, angle_acc_y, angle_acc_z;
+float angle_x, angle_y, angle_z;
 
-TimerHandle_t xTimers[1]; // using 1 timer
+int timer_1 = 50;
+void IMU_calculate_offset(void){
+	int f  = 500;
+	for(int i=0;i<f;i++){
+      VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
 
+			// off_set_ax += (float) raw_ax/4096;
+			// off_set_ay += (float) raw_ay/4096;
+			// off_set_az += (float) raw_az/4096-1;
+		
+			// off_set_gx += (float) raw_gx/500;
+			// off_set_gy += (float) raw_gy/500;
+			off_set_gz += (float) raw_gz/500;
+      
+      // sprintf(PS2_text,"\n Accel: ax: %f, ay: %f  az: %f \n",off_set_ax,off_set_ay,off_set_az);
+      // Serial.print(PS2_text);
+	}
+			// off_set_ax = (float) off_set_ax/f;
+			// off_set_ay = (float) off_set_ay/f;
+			// off_set_az = (float) off_set_az/f;
+			// off_set_gx = (float) off_set_gx/f;
+			// off_set_gy = (float) off_set_gy/f;
+			off_set_gz = (float) off_set_gz/f;	
+
+      // sprintf(PS2_text,"\n Offset Accel: ax: %f, ay: %f  az: %f \n",off_set_ax,off_set_ay,off_set_az);
+      // Serial.print(PS2_text);
+      // sprintf(PS2_text,"\n Offset Gyro: gx: %f, gy: %f  gz: %f \n",off_set_gx,off_set_gy,off_set_gz);
+      // Serial.print(PS2_text);
+}
+
+
+TimerHandle_t xTimers[2]; // using 2 timer
+float alpha = 8.8;
 void vTimerCallback(TimerHandle_t xTimer){
     configASSERT(xTimer);
     int ulCount = (uint32_t) pvTimerGetTimerID(xTimer);
@@ -40,13 +78,30 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       VRC_PS2.read_gamepad(0, 0);
+       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
     }
-    // if(ulCount==1){
-    //    /*
-    //    Task2
-    //    */
-    // }
+
+    //Timer 1 reading angle
+    if(ulCount==1){
+       /*
+       Task2
+      //  */
+      VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
+      // gx = (float) raw_gx/500 - off_set_gx; gy = (float)raw_gy/500 - off_set_gy; 
+      gz = (float)raw_gz/500 - off_set_gz;
+      // ax = (float)raw_ax/4096 - off_set_ax; ay = (float)raw_ay/4096 - off_set_ay; az = (float)raw_az/4096 - off_set_az;
+
+      // sprintf(PS2_text,"\n Gyro: gx: %f, gy: %f  gz: %f \n",gx,gy,gz);
+      // Serial.print(PS2_text);
+
+      // angle_gyro_x = (float) timer_1*gx/1000;
+      // angle_gyro_y = (float) timer_1*gy/1000;
+      angle_gyro_z = (float) timer_1*gz/1000;
+
+      // angle_x = (angle_x+angle_gyro_x);
+			// angle_y = (angle_y+angle_gyro_y);
+			angle_z = (angle_z+angle_gyro_z);
+    }
 }
 
 void led_random_test(void){
@@ -193,22 +248,15 @@ void setup() {
   // led config
   FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
 
-  // Timer config
-  xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
-  xTimerStart(xTimers[0],0);
-  
-  // xTimers[ 1 ] = xTimerCreate("Task2",pdMS_TO_TICKS(1000),pdTRUE,( void * ) 0,vTimerCallback);
-  // xTimerStart(xTimers[0],0);
-
   //config ps2:
   int err = -1;
 
   led_random_test();
 
   for(int i=0; i<10; i++){
-    delay(1000);
+    delay(100);
     err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
-    Serial. print(".");
+    Serial.print(".");
     if(!err){
       Serial.println("Sucsessfully Connect PS2 Controller!");
       break;
@@ -220,9 +268,18 @@ void setup() {
     FastLED.show();
   }
 
+  IMU_calculate_offset();
+
+    // Timer config
+  xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
+  xTimerStart(xTimers[0],0);
+  
+  xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
+  xTimerStart(xTimers[1],0);
 } 
 
-int16_t ax, ay, az, gx, gy, gz;
+
+
 void loop() {
   // put your main code here, to run repeatedly:
   VRC_Control();
@@ -230,15 +287,10 @@ void loop() {
   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
 
-  // VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
-  // Serial.print(PS2_text);
-  // delay(500);
-
-
-  // VRC_MPU6050.Read_gyro();
-  // sprintf(PS2_text,"Gyro: gx: %f, gy: %f  gz: %f \n",VRC_MPU6050.GyroX,VRC_MPU6050.GyroY,VRC_MPU6050.GyroZ);
-  // Serial.print(PS2_text);
+  //VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  //sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
+  sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
+  Serial.print(PS2_text);
 
   //scan_i2c();
 
