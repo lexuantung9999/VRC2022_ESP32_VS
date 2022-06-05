@@ -33,6 +33,9 @@
 #define ANOTHER2   23
 #define ANOTHER3   19
 
+//MODE
+#define AUTO        1
+#define MANUAL      0
 //LED
 #define LED_PIN          19
 #define NUM_LEDS         10
@@ -42,7 +45,7 @@
 #define NOISE_J_UP      140
 #define NOISE_J_DOWN    116
 
-#define MAX_PWM 800
+// #define MAX_PWM 800
 #define MIN_PWM 50
 
 #define LEFT_MOTOR      1

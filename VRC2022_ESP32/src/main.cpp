@@ -23,6 +23,13 @@ bool dir_left, dir_right;
 
 int stt_servo = 0;
 int lift_stt = 0, pick_up_stt = 0, rotate_stt = 0;
+
+bool mode;
+
+#ifndef MAX_PWM
+  uint16_t MAX_PWM = 800;
+#endif
+
 /*!
   *  @brief  Config IO pin, endstop pin, another pin, ...
 */
@@ -79,7 +86,7 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+       VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
     }
 
     //Timer 1 reading angle
@@ -109,12 +116,37 @@ void led_random_test(void){
   for(int i=0;i<10;i++){
     VRC_leds[i] = CRGB(random(0,255), random(0,255), random(0,255));
     FastLED.show();
-    delay(100);
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
+void led_color(int red, int green, int blue){
+  for(int i=0;i<10;i++){
+    VRC_leds[i] = CRGB(red, green, blue);
+    FastLED.show();
+  }
+}
+
+void led_change_mode(){
+  for(int i=0;i<10;i++){
+    VRC_leds[i] = CRGB(0, 0, 255);
+    FastLED.show();
+    vTaskDelay(pdMS_TO_TICKS(10));
+    
+  }
+  for(int i=9;i>=0;i--){
+    VRC_leds[i] = CRGB(0, 255, 0);
+    FastLED.show();
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+}
 
 void VRC_Control(){
+  if(VRC_PS2.ButtonPressed(PSB_CIRCLE)){
+    mode = !mode;
+    led_change_mode();
+  }
+  if(mode == MANUAL){
     int16_t val_RY, val_RX;
 
     val_RY = VRC_PS2.Analog(PSS_RY);
@@ -269,6 +301,11 @@ void VRC_Control(){
     }
   }
   //*************** End rotate winmill **************** //
+  }
+
+  else{
+
+  }
 }
 
 void setup() {
