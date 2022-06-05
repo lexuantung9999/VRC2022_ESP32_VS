@@ -120,7 +120,7 @@ void led_random_test(void){
   }
 }
 
-void led_color(int red, int green, int blue){
+void led_all_color(int red, int green, int blue){
   for(int i=0;i<10;i++){
     VRC_leds[i] = CRGB(red, green, blue);
     FastLED.show();
@@ -132,7 +132,6 @@ void led_change_mode(){
     VRC_leds[i] = CRGB(0, 0, 255);
     FastLED.show();
     vTaskDelay(pdMS_TO_TICKS(10));
-    
   }
   for(int i=9;i>=0;i--){
     VRC_leds[i] = CRGB(0, 255, 0);
@@ -141,10 +140,14 @@ void led_change_mode(){
   }
 }
 
+
 void VRC_Control(){
   if(VRC_PS2.ButtonPressed(PSB_CIRCLE)){
     mode = !mode;
     led_change_mode();
+    if(mode == AUTO){
+      led_all_color(255,150,0);
+    }
   }
   if(mode == MANUAL){
 
@@ -153,19 +156,19 @@ void VRC_Control(){
       MAX_PWM = MAX_PWM*2;
 
       if(MAX_PWM>800 && MAX_PWM<3600){
-        led_color(255,180,0); //yellow led, middle speed
+        led_all_color(255,180,0); //yellow led, middle speed
       }
 
       if(MAX_PWM>=3600){
         MAX_PWM = 3600;
-        led_color(221,160,221); // violet led , max speed
+        led_all_color(221,160,221); // violet led , max speed
       }
     }
     else if(VRC_PS2.ButtonPressed(PSAB_CROSS)){
       //change mode to LOW speed PWM max = 800
       //Slowest
       MAX_PWM = 800 ;
-      led_color(255,0,0); //green led, middle speed
+      led_all_color(255,0,0); //green led, middle speed
     }
     //***************************** END SPEDD MODE ****************************//
 
