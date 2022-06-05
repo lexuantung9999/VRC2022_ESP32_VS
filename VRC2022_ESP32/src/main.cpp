@@ -20,8 +20,9 @@ MPU6050         VRC_MPU6050;
 char PS2_text[100];
 int16_t pwm_left, pwm_right;
 bool dir_left, dir_right;
-int stt_servo =0;
-int lift_stt = 0;
+
+int stt_servo = 0;
+int lift_stt = 0, pick_up_stt = 0, rotate_stt = 0;
 /*!
   *  @brief  Config IO pin, endstop pin, another pin, ...
 */
@@ -114,7 +115,6 @@ void led_random_test(void){
 
 
 void VRC_Control(){
-  
     int16_t val_RY, val_RX;
 
     val_RY = VRC_PS2.Analog(PSS_RY);
@@ -169,33 +169,53 @@ void VRC_Control(){
     Serial.println(PS2_text);
   #endif 
 
+
+  // *********** Control Pick box ******************************* //
   if(VRC_PS2.ButtonPressed(PSB_L2)){
     //Pick up box
-    VRC_Servo.Angle(180,PICK_UP_SERVO1);
-    VRC_Servo.Angle(0,PICK_UP_SERVO2);
-    stt_servo = 1;
+    if(pick_up_stt != PICK_UP){
+      VRC_Servo.Angle(180,PICK_UP_SERVO1);
+      VRC_Servo.Angle(0,PICK_UP_SERVO2);
+      stt_servo = 1;
+      pick_up_stt = PICK_UP;
+    }
     //Serial.println("Pick up box");
-  }
-  else if(VRC_PS2.ButtonPressed(PSB_R2)){
-    //Remove box
-    VRC_Servo.Angle(0,PICK_UP_SERVO1);
-    VRC_Servo.Angle(180,PICK_UP_SERVO2);
-    stt_servo = -1;
-    //Serial.println("Remove box");
-  }
-  else if(VRC_PS2.ButtonPressed(PSB_CROSS)) {
-    if(stt_servo!=0){
+    else{
       VRC_Servo.Stop(PICK_UP_SERVO1); 
       VRC_Servo.Stop(PICK_UP_SERVO2); 
-      //Serial.println("Servo stop");
-      stt_servo = 0;
+      pick_up_stt = PICK_STOP;
     }
-    
   }
 
+  else if(VRC_PS2.ButtonPressed(PSB_R2)){
+    //Remove box
+    if(pick_up_stt != PICK_DOWN){
+      VRC_Servo.Angle(0,PICK_UP_SERVO1);
+      VRC_Servo.Angle(180,PICK_UP_SERVO2);
+      stt_servo = -1;
+      pick_up_stt = PICK_DOWN;
+    }
+    //Serial.println("Remove box");
+    else{
+      VRC_Servo.Stop(PICK_UP_SERVO1); 
+      VRC_Servo.Stop(PICK_UP_SERVO2); 
+      pick_up_stt = PICK_STOP;
+    }
+  }
 
+  // else if(VRC_PS2.ButtonPressed(PSB_CROSS)) {
+  //   if(stt_servo!=0){
+  //     VRC_Servo.Stop(PICK_UP_SERVO1); 
+  //     VRC_Servo.Stop(PICK_UP_SERVO2); 
+  //     //Serial.println("Servo stop");
+  //     stt_servo = 0;
+  //}
+  //}
+  // ******************** End pick box*******************//
+
+  // ******************** Control Lift ********************* //
   if(VRC_PS2.ButtonPressed(PSB_PAD_UP)){
-    if(digitalRead(MAX_END_STOP) != 0){
+    if(digitalRead(MAX_END_STOP) != LIFT_STOP){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
       Serial.println("Lift up");
       lift_stt = LIFT_UP;
@@ -203,7 +223,7 @@ void VRC_Control(){
   }
 
   if(VRC_PS2.ButtonPressed(PSB_PAD_DOWN)){
-    if(digitalRead(MIN_END_STOP) != 0){
+    if(digitalRead(MIN_END_STOP) != LIFT_STOP){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
       Serial.println("Lift down");
       lift_stt = LIFT_DOWN;
@@ -215,8 +235,10 @@ void VRC_Control(){
     Serial.println("Lift stop");
     lift_stt = LIFT_STOP;
   }
+  // ************************ End Control Lift *******************//
 
-  if(lift_stt==1){
+  // **************** Safe endstop lift up and down ************* //
+  if(lift_stt==LIFT_UP){
     if(digitalRead(MAX_END_STOP)==0){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
       Serial.println("Lift stop");
@@ -224,22 +246,29 @@ void VRC_Control(){
     }
   }
 
-  if(lift_stt==-1){
+  if(lift_stt== LIFT_DOWN){
     if(digitalRead(MIN_END_STOP)==0){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
       Serial.println("Lift stop");
       lift_stt = LIFT_STOP;
     }
   }
+  // ************ Safe function ***************** //
 
+
+  //**************** Rotate windmill ****************** //
   if(VRC_PS2.ButtonPressed(PSB_L1)){
     //Rotate windmill
-    VRC_Motor.Run(ROTATE_MOTOR,4000,1);
+    if(rotate_stt == ROTATE_WINDMILL_OFF){
+      VRC_Motor.Run(ROTATE_MOTOR,4000,1);
+      rotate_stt = ROTATE_WINDMILL_ON;
+    }
+    else{
+      VRC_Motor.Stop(ROTATE_MOTOR);
+      rotate_stt = ROTATE_WINDMILL_OFF;
+    }
   }
-  else if(VRC_PS2.ButtonPressed(PSB_R1)){
-    //Stop windmill
-    VRC_Motor.Stop(ROTATE_MOTOR);
-  }
+  //*************** End rotate winmill **************** //
 }
 
 void setup() {

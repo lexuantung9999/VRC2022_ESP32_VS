@@ -61,4 +61,13 @@
 #define LIFT_DOWN   -1
 #define LIFT_STOP   0
 
+// pick up stt
+#define PICK_UP     1
+#define PICK_DOWN   -1
+#define PICK_STOP   0
+
+//ROTATE stt
+#define ROTATE_WINDMILL_ON   1
+#define ROTATE_WINDMILL_OFF  0
+
 #endif
