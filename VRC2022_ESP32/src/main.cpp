@@ -22,7 +22,7 @@ int16_t pwm_left, pwm_right;
 bool dir_left, dir_right;
 
 int stt_servo = 0;
-int lift_stt = 0, pick_up_stt = 0, rotate_stt = 0;
+int pick_up_stt = 0, rotate_stt = 0;
 
 bool mode;
 
@@ -87,6 +87,25 @@ void vTimerCallback(TimerHandle_t xTimer){
     if(ulCount==0){
        // Task 1
        VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+
+        // **************** Safe endstop lift up and down ************* //
+        // if(VRC_Motor.lift_stt==LIFT_UP){
+        //   if(digitalRead(MAX_END_STOP)==0){
+        //     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+        //     Serial.println("Lift stop");
+        //     VRC_Motor.lift_stt = LIFT_STOP;
+        //   }
+        // }
+
+        // if(VRC_Motor.lift_stt== LIFT_DOWN){
+        //   if(digitalRead(MIN_END_STOP)==0){
+        //     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+        //     Serial.println("Lift stop");
+        //     VRC_Motor.lift_stt = LIFT_STOP;
+        //   }
+        // }
+        // ************ Safe function ***************** //
+
     }
 
     //Timer 1 reading angle
@@ -140,8 +159,28 @@ void led_change_mode(){
   }
 }
 
+void pick_up_box(){
+  VRC_Servo.Angle(180,PICK_UP_SERVO1);
+  VRC_Servo.Angle(0,PICK_UP_SERVO2);
+  stt_servo = 1;
+  pick_up_stt = PICK_UP;
+}
+
+void remove_box(){
+  VRC_Servo.Angle(0,PICK_UP_SERVO1);
+  VRC_Servo.Angle(180,PICK_UP_SERVO2);
+  stt_servo = -1;
+  pick_up_stt = PICK_DOWN;
+}
+
+void stop_box(){
+  VRC_Servo.Stop(PICK_UP_SERVO1); 
+  VRC_Servo.Stop(PICK_UP_SERVO2); 
+  pick_up_stt = PICK_STOP;
+}
 
 void VRC_Control(){
+
   if(VRC_PS2.ButtonPressed(PSB_CIRCLE)){
     mode = !mode;
     led_change_mode();
@@ -149,7 +188,6 @@ void VRC_Control(){
       led_all_color(255,150,0);
     }
   }
-  if(mode == MANUAL){
 
     //***************************** SPEED MODE ******************************//
     if(VRC_PS2.ButtonPressed(PSB_TRIANGLE)){
@@ -169,10 +207,13 @@ void VRC_Control(){
       //Slowest
       MAX_PWM = 800 ;
       led_all_color(255,0,0); //green led, middle speed
+      VRC_Motor.Stop(LEFT_MOTOR);
+      VRC_Motor.Stop(RIGHT_MOTOR);
     }
     //***************************** END SPEDD MODE ****************************//
 
-
+  // ********************************** CONTROL MODE ****************************************** //  
+  if(mode == MANUAL){
     // **************************** MOVING ROBOT ALGORITHM ********************// 
     int16_t val_RY, val_RX;
 
@@ -233,43 +274,24 @@ void VRC_Control(){
   if(VRC_PS2.ButtonPressed(PSB_L2)){
     //Pick up box
     if(pick_up_stt != PICK_UP){
-      VRC_Servo.Angle(180,PICK_UP_SERVO1);
-      VRC_Servo.Angle(0,PICK_UP_SERVO2);
-      stt_servo = 1;
-      pick_up_stt = PICK_UP;
+      pick_up_box();
     }
     //Serial.println("Pick up box");
     else{
-      VRC_Servo.Stop(PICK_UP_SERVO1); 
-      VRC_Servo.Stop(PICK_UP_SERVO2); 
-      pick_up_stt = PICK_STOP;
+      stop_box();
     }
   }
 
   else if(VRC_PS2.ButtonPressed(PSB_R2)){
     //Remove box
     if(pick_up_stt != PICK_DOWN){
-      VRC_Servo.Angle(0,PICK_UP_SERVO1);
-      VRC_Servo.Angle(180,PICK_UP_SERVO2);
-      stt_servo = -1;
-      pick_up_stt = PICK_DOWN;
+      remove_box();
     }
     //Serial.println("Remove box");
     else{
-      VRC_Servo.Stop(PICK_UP_SERVO1); 
-      VRC_Servo.Stop(PICK_UP_SERVO2); 
-      pick_up_stt = PICK_STOP;
+      stop_box();
     }
   }
-
-  // else if(VRC_PS2.ButtonPressed(PSB_CROSS)) {
-  //   if(stt_servo!=0){
-  //     VRC_Servo.Stop(PICK_UP_SERVO1); 
-  //     VRC_Servo.Stop(PICK_UP_SERVO2); 
-  //     //Serial.println("Servo stop");
-  //     stt_servo = 0;
-  //}
-  //}
   // ******************** End pick box*******************//
 
   // ******************** Control Lift ********************* //
@@ -277,7 +299,7 @@ void VRC_Control(){
     if(digitalRead(MAX_END_STOP) != LIFT_STOP){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
       Serial.println("Lift up");
-      lift_stt = LIFT_UP;
+      //VRC_Motor.lift_stt = LIFT_UP;
     }
   }
 
@@ -285,31 +307,31 @@ void VRC_Control(){
     if(digitalRead(MIN_END_STOP) != LIFT_STOP){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
       Serial.println("Lift down");
-      lift_stt = LIFT_DOWN;
+      //VRC_Motor.lift_stt = LIFT_DOWN;
     }
   }
 
   if(VRC_PS2.ButtonPressed(PSB_SQUARE)){
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
     Serial.println("Lift stop");
-    lift_stt = LIFT_STOP;
+    //VRC_Motor.lift_stt = LIFT_STOP;
   }
   // ************************ End Control Lift *******************//
 
   // **************** Safe endstop lift up and down ************* //
-  if(lift_stt==LIFT_UP){
+  if(VRC_Motor.lift_stt==LIFT_UP){
     if(digitalRead(MAX_END_STOP)==0){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
       Serial.println("Lift stop");
-      lift_stt = LIFT_STOP;
+      //VRC_Motor.lift_stt = LIFT_STOP;
     }
   }
 
-  if(lift_stt== LIFT_DOWN){
+  if(VRC_Motor.lift_stt== LIFT_DOWN){
     if(digitalRead(MIN_END_STOP)==0){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
       Serial.println("Lift stop");
-      lift_stt = LIFT_STOP;
+      //VRC_Motor.lift_stt = LIFT_STOP;
     }
   }
   // ************ Safe function ***************** //
@@ -332,7 +354,59 @@ void VRC_Control(){
 
   else{
     // ************************ AUTO MODE ***************************** //
+    vTaskDelay(pdMS_TO_TICKS(500));
     MAX_PWM = 800;
+
+    int i = 0;
+    //increase speed
+    for(i=0;i<=MAX_PWM;i+=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,0);
+      VRC_Motor.Run(RIGHT_MOTOR,i,0);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    //decrease speed
+    for(i;i>=0;i-=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,0);
+      VRC_Motor.Run(RIGHT_MOTOR,i,0);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+
+    // lift
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
+
+    //while(digitalRead(MAX_END_STOP) != END_STOP_CLICK);
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+
+    //pick up box
+    pick_up_box();
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    stop_box();
+
+    //increase speed
+    for(i=0;i<=MAX_PWM;i+=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,1);
+      VRC_Motor.Run(RIGHT_MOTOR,i,1);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    //decrease speed
+    for(i;i>=0;i-=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,1);
+      VRC_Motor.Run(RIGHT_MOTOR,i,1);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+
+    mode = MANUAL;
+    led_all_color(0,255,0);
 
   }
 }

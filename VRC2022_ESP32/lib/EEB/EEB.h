@@ -50,6 +50,7 @@ private:
     int Motor_A[4] = {M1_A,M2_A,M3_A,M4_A}, Motor_B[4]={M1_B,M2_B,M3_B,M4_B};
 
 public:
+    int lift_stt = 0;
     void Init();
     /*!
     *  @brief  Note: motor 4 using lift mechanism and motor 3 using rotate mechanism
@@ -80,8 +81,9 @@ private:
    int My_servo[6]={Servo1,Servo2,Servo3,Servo4,Servo5,Servo6};
    int pwm_val, T_on;
    float T_ON_90 = 1.5, T_ON_0 = 1.0, T_ON_180 =2.0, Ts=20; // T_ON_90 is time in ms to control servo in 90 degree.Ts is cycle of PWM control servo: 20ms ~ freq: 50Hz
-
+   
 public:
+
    void Init();
 
     /*!
@@ -91,6 +93,7 @@ public:
     */
    void Angle(int angle, int servo_num);  
    void Stop(int servo_num);
+ 
 
 };
 

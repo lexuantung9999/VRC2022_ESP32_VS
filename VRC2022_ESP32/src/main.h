@@ -73,4 +73,6 @@
 #define ROTATE_WINDMILL_ON   1
 #define ROTATE_WINDMILL_OFF  0
 
+#define END_STOP_CLICK 0
+#define END_STOP_RELEASE 1
 #endif
