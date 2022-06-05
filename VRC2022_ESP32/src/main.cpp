@@ -147,6 +147,30 @@ void VRC_Control(){
     led_change_mode();
   }
   if(mode == MANUAL){
+
+    //***************************** SPEED MODE ******************************//
+    if(VRC_PS2.ButtonPressed(PSB_TRIANGLE)){
+      MAX_PWM = MAX_PWM*2;
+
+      if(MAX_PWM>800 && MAX_PWM<3600){
+        led_color(255,180,0); //yellow led, middle speed
+      }
+
+      if(MAX_PWM>=3600){
+        MAX_PWM = 3600;
+        led_color(221,160,221); // violet led , max speed
+      }
+    }
+    else if(VRC_PS2.ButtonPressed(PSAB_CROSS)){
+      //change mode to LOW speed PWM max = 800
+      //Slowest
+      MAX_PWM = 800 ;
+      led_color(255,0,0); //green led, middle speed
+    }
+    //***************************** END SPEDD MODE ****************************//
+
+
+    // **************************** MOVING ROBOT ALGORITHM ********************// 
     int16_t val_RY, val_RX;
 
     val_RY = VRC_PS2.Analog(PSS_RY);
@@ -189,7 +213,7 @@ void VRC_Control(){
       dir_right =1; 
       pwm_right = -pwm_right;
     }
-
+  // ********************** END AGORITHM **************** //
 
   
   #if GAMEPAD_LOG_INFO
@@ -304,6 +328,8 @@ void VRC_Control(){
   }
 
   else{
+    // ************************ AUTO MODE ***************************** //
+    MAX_PWM = 800;
 
   }
 }
@@ -311,8 +337,6 @@ void VRC_Control(){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  VRC_Motor.Init();
-  VRC_Servo.Init();
   GPIO_config();
   
   // MPU config
@@ -324,7 +348,6 @@ void setup() {
 
   //config ps2:
   int err = -1;
-
   led_random_test();
 
   for(int i=0; i<10; i++){
@@ -336,11 +359,6 @@ void setup() {
       break;
     }
   }
-  
-  for(int i=0;i<10;i++){
-    VRC_leds[i] = CRGB(0,255,0);
-    FastLED.show();
-  }
 
   IMU_calculate_offset();
 
@@ -350,6 +368,14 @@ void setup() {
   
   xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
   xTimerStart(xTimers[1],0);
+
+  VRC_Motor.Init();
+  VRC_Servo.Init();
+
+  for(int i=0;i<10;i++){
+    VRC_leds[i] = CRGB(0,255,0);
+    FastLED.show();
+  }
 } 
 
 
