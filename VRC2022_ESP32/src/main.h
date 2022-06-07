@@ -47,6 +47,7 @@
 
 // #define MAX_PWM 800
 #define MIN_PWM 50
+#define BASE_LINE_PWM 500
 
 #define LEFT_MOTOR      1
 #define RIGHT_MOTOR     2
@@ -75,4 +76,6 @@
 
 #define END_STOP_CLICK 0
 #define END_STOP_RELEASE 1
+
+int line[5]={25,32,36,0,2};
 #endif

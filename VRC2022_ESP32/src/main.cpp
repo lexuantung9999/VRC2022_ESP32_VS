@@ -8,6 +8,7 @@
 #include <FastLED.h>
 #include <MPU6050.h>
 #include <I2Cdev.h>
+#include <line_follow.h>
 
 #define GAMEPAD_LOG_INFO  0
 
@@ -16,6 +17,7 @@ Servo_Motor     VRC_Servo;
 PS2X            VRC_PS2;
 CRGB            VRC_leds[NUM_LEDS];
 MPU6050         VRC_MPU6050;
+line_follow     VRC_line_follow;
 
 char PS2_text[100];
 int16_t pwm_left, pwm_right;
@@ -36,6 +38,9 @@ bool mode;
 void GPIO_config(){
   pinMode(MAX_END_STOP, INPUT_PULLUP); pinMode(MIN_END_STOP, INPUT_PULLUP); 
   pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
+  for(int i=0;i<5;i++){
+    pinMode(line[i],INPUT);
+  }
 }
 
 int16_t raw_ax, raw_ay, raw_az, raw_gx, raw_gy, raw_gz;
@@ -177,6 +182,28 @@ void stop_box(){
   VRC_Servo.Stop(PICK_UP_SERVO1); 
   VRC_Servo.Stop(PICK_UP_SERVO2); 
   pick_up_stt = PICK_STOP;
+}
+
+bool input[5];
+void line_following_auto(){
+  // scan sensor:
+  for(int i=0;i<5;i++){
+    input[i]=digitalRead(line[i]);
+  }
+  VRC_line_follow.calculate_output_control(15,input[0],input[1],input[2],input[3],input[4]);
+
+  pwm_left = BASE_LINE_PWM + VRC_line_follow.output;
+  pwm_right = BASE_LINE_PWM - VRC_line_follow.output;
+
+  if(pwm_left>=MAX_PWM) pwm_left = MAX_PWM;
+  if(pwm_left<=MIN_PWM) pwm_left = MIN_PWM;
+
+  if(pwm_right>=MAX_PWM) pwm_right = MAX_PWM;
+  if(pwm_right<=MIN_PWM) pwm_right = MIN_PWM;
+  
+  VRC_Motor.Run(LEFT_MOTOR,pwm_left,0);
+  VRC_Motor.Run(RIGHT_MOTOR,pwm_right,0);
+  
 }
 
 void VRC_Control(){
