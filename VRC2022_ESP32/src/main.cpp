@@ -109,26 +109,15 @@ void vTimerCallback(TimerHandle_t xTimer){
     }
 
     //Timer 1 reading angle
-    if(ulCount==1){
-       /*
-       Task2
-      //  */
-      VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
-      // gx = (float) raw_gx/500 - off_set_gx; gy = (float)raw_gy/500 - off_set_gy; 
-      gz = (float)raw_gz/500 - off_set_gz;
-      // ax = (float)raw_ax/4096 - off_set_ax; ay = (float)raw_ay/4096 - off_set_ay; az = (float)raw_az/4096 - off_set_az;
-
-      // sprintf(PS2_text,"\n Gyro: gx: %f, gy: %f  gz: %f \n",gx,gy,gz);
-      // Serial.print(PS2_text);
-
-      // angle_gyro_x = (float) timer_1*gx/1000;
-      // angle_gyro_y = (float) timer_1*gy/1000;
-      angle_gyro_z = (float) timer_1*gz/1000;
-
-      // angle_x = (angle_x+angle_gyro_x);
-			// angle_y = (angle_y+angle_gyro_y);
-			angle_z = (angle_z+angle_gyro_z);
-    }
+    // if(ulCount==1){
+    //    /*
+    //    Task2
+    //   //  */
+    //   VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
+    //   gz = (float)raw_gz/500 - off_set_gz;
+    //   angle_gyro_z = (float) timer_1*gz/1000;
+		// 	angle_z = (angle_z+angle_gyro_z);
+    // }
 }
 
 void led_random_test(void){
@@ -263,10 +252,10 @@ void VRC_Control(){
   #if GAMEPAD_LOG_INFO
     sprintf(PS2_text,"pwm_left: %d, dir_left: %d  pwm_right: %d, dir_right: %d \n",pwm_left,dir_left,pwm_right,dir_right);
     Serial.println(PS2_text);
-    sprintf(PS2_text,"RX: %d, LX: %d  RY: %d, LY: %d \n",VRC_PS2.Analog(PSS_RX),VRC_PS2.Analog(PSS_LX),VRC_PS2.Analog(PSS_RY),VRC_PS2.Analog(PSS_LY));
-    Serial.println(PS2_text);
-    sprintf(PS2_text,"tri: %d, cros: %d, sqr: %d, circ: %d \n", VRC_PS2.Button(PSB_TRIANGLE),VRC_PS2.Button(PSB_CROSS),VRC_PS2.Button(PSB_SQUARE),VRC_PS2.Button(PSB_CIRCLE));
-    Serial.println(PS2_text);
+    // sprintf(PS2_text,"RX: %d, LX: %d  RY: %d, LY: %d \n",VRC_PS2.Analog(PSS_RX),VRC_PS2.Analog(PSS_LX),VRC_PS2.Analog(PSS_RY),VRC_PS2.Analog(PSS_LY));
+    // Serial.println(PS2_text);
+    // sprintf(PS2_text,"tri: %d, cros: %d, sqr: %d, circ: %d \n", VRC_PS2.Button(PSB_TRIANGLE),VRC_PS2.Button(PSB_CROSS),VRC_PS2.Button(PSB_SQUARE),VRC_PS2.Button(PSB_CIRCLE));
+    // Serial.println(PS2_text);
   #endif 
 
 
@@ -275,10 +264,12 @@ void VRC_Control(){
     //Pick up box
     if(pick_up_stt != PICK_UP){
       pick_up_box();
+      Serial.println("box up");
     }
     //Serial.println("Pick up box");
     else{
       stop_box();
+      Serial.println("box stop");
     }
   }
 
@@ -286,10 +277,12 @@ void VRC_Control(){
     //Remove box
     if(pick_up_stt != PICK_DOWN){
       remove_box();
+      Serial.println("box remove");
     }
     //Serial.println("Remove box");
     else{
       stop_box();
+      Serial.println("box stop");
     }
   }
   // ******************** End pick box*******************//
@@ -343,67 +336,71 @@ void VRC_Control(){
     if(rotate_stt == ROTATE_WINDMILL_OFF){
       VRC_Motor.Run(ROTATE_MOTOR,4000,1);
       rotate_stt = ROTATE_WINDMILL_ON;
+      Serial.println("Rotate ON");
     }
     else{
       VRC_Motor.Stop(ROTATE_MOTOR);
       rotate_stt = ROTATE_WINDMILL_OFF;
+      Serial.println("Rotate OFF");
     }
   }
   //*************** End rotate winmill **************** //
   }
 
-  else{
+  else if (mode == AUTO){
     // ************************ AUTO MODE ***************************** //
-    vTaskDelay(pdMS_TO_TICKS(500));
-    MAX_PWM = 800;
+    Serial.println("Auto Mode");
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    // vTaskDelay(pdMS_TO_TICKS(500));
+    // MAX_PWM = 800;
 
-    int i = 0;
-    //increase speed
-    for(i=0;i<=MAX_PWM;i+=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,0);
-      VRC_Motor.Run(RIGHT_MOTOR,i,0);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
+    // int i = 0;
+    // //increase speed
+    // for(i=0;i<=MAX_PWM;i+=5);
+    // {
+    //   VRC_Motor.Run(LEFT_MOTOR,i,0);
+    //   VRC_Motor.Run(RIGHT_MOTOR,i,0);
+    //   vTaskDelay(pdMS_TO_TICKS(5));
+    // }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    //decrease speed
-    for(i;i>=0;i-=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,0);
-      VRC_Motor.Run(RIGHT_MOTOR,i,0);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    // //decrease speed
+    // for(i;i>=0;i-=5);
+    // {
+    //   VRC_Motor.Run(LEFT_MOTOR,i,0);
+    //   VRC_Motor.Run(RIGHT_MOTOR,i,0);
+    //   vTaskDelay(pdMS_TO_TICKS(5));
+    // }
 
-    // lift
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
+    // // lift
+    // VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
 
-    //while(digitalRead(MAX_END_STOP) != END_STOP_CLICK);
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    // //while(digitalRead(MAX_END_STOP) != END_STOP_CLICK);
+    // vTaskDelay(pdMS_TO_TICKS(3000));
     
-    VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+    // VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
 
-    //pick up box
-    pick_up_box();
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    stop_box();
+    // //pick up box
+    // pick_up_box();
+    // vTaskDelay(pdMS_TO_TICKS(3000));
+    // stop_box();
 
-    //increase speed
-    for(i=0;i<=MAX_PWM;i+=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,1);
-      VRC_Motor.Run(RIGHT_MOTOR,i,1);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
+    // //increase speed
+    // for(i=0;i<=MAX_PWM;i+=5);
+    // {
+    //   VRC_Motor.Run(LEFT_MOTOR,i,1);
+    //   VRC_Motor.Run(RIGHT_MOTOR,i,1);
+    //   vTaskDelay(pdMS_TO_TICKS(5));
+    // }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    //decrease speed
-    for(i;i>=0;i-=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,1);
-      VRC_Motor.Run(RIGHT_MOTOR,i,1);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    // //decrease speed
+    // for(i;i>=0;i-=5);
+    // {
+    //   VRC_Motor.Run(LEFT_MOTOR,i,1);
+    //   VRC_Motor.Run(RIGHT_MOTOR,i,1);
+    //   vTaskDelay(pdMS_TO_TICKS(5));
+    // }
 
     mode = MANUAL;
     led_all_color(0,255,0);
@@ -417,9 +414,9 @@ void setup() {
   GPIO_config();
   
   // MPU config
-  VRC_MPU6050.initialize();
-  VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
-  VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+  // VRC_MPU6050.initialize();
+  // VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
+  // VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
   // led config
   FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
 
@@ -437,14 +434,14 @@ void setup() {
     }
   }
 
-  IMU_calculate_offset();
+  //IMU_calculate_offset();
 
     // Timer config
   xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
   xTimerStart(xTimers[0],0);
   
-  xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
-  xTimerStart(xTimers[1],0);
+  // xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
+  // xTimerStart(xTimers[1],0);
 
   VRC_Motor.Init();
   VRC_Servo.Init();
@@ -466,8 +463,8 @@ void loop() {
 
   //VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   //sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
-  sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
-  Serial.print(PS2_text);
+  // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
+  // Serial.print(PS2_text);
 
   //scan_i2c();
 
