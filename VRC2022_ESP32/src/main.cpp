@@ -91,7 +91,7 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+       VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
 
         // **************** Safe endstop lift up and down ************* //
         // if(VRC_Motor.lift_stt==LIFT_UP){
