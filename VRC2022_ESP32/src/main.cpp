@@ -91,7 +91,7 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
 
         // **************** Safe endstop lift up and down ************* //
         // if(VRC_Motor.lift_stt==LIFT_UP){
@@ -198,7 +198,9 @@ void line_following_auto(){
 void VRC_Control(){
 
   if(VRC_PS2.ButtonPressed(PSB_CIRCLE)){
+    while(VRC_PS2.ButtonPressed(PSB_CIRCLE));
     mode = !mode;
+    Serial.println(mode);
     led_change_mode();
     if(mode == AUTO){
       led_all_color(255,150,0);
@@ -207,8 +209,8 @@ void VRC_Control(){
 
     //***************************** SPEED MODE ******************************//
     if(VRC_PS2.ButtonPressed(PSB_TRIANGLE)){
+      while(VRC_PS2.ButtonPressed(PSB_TRIANGLE));
       MAX_PWM = MAX_PWM*2;
-
       if(MAX_PWM>800 && MAX_PWM<3600){
         led_all_color(255,180,0); //yellow led, middle speed
       }
@@ -217,14 +219,19 @@ void VRC_Control(){
         MAX_PWM = 3600;
         led_all_color(221,160,221); // violet led , max speed
       }
+      Serial.print("MAX PWM: ");
+      Serial.println(MAX_PWM);
     }
-    else if(VRC_PS2.ButtonPressed(PSAB_CROSS)){
+    if(VRC_PS2.ButtonPressed(PSB_CROSS)){
+      while(VRC_PS2.ButtonPressed(PSB_CROSS));
       //change mode to LOW speed PWM max = 800
       //Slowest
       MAX_PWM = 800 ;
       led_all_color(255,0,0); //green led, middle speed
-      VRC_Motor.Stop(LEFT_MOTOR);
-      VRC_Motor.Stop(RIGHT_MOTOR);
+      //VRC_Motor.Stop(LEFT_MOTOR);
+      //VRC_Motor.Stop(RIGHT_MOTOR);
+      Serial.print("RESET PWM: ");
+      Serial.println(MAX_PWM);
     }
     //***************************** END SPEDD MODE ****************************//
 
@@ -289,6 +296,7 @@ void VRC_Control(){
   // *********** Control Pick box ******************************* //
   if(VRC_PS2.ButtonPressed(PSB_L2)){
     //Pick up box
+    while(VRC_PS2.ButtonPressed(PSB_L2));
     if(pick_up_stt != PICK_UP){
       pick_up_box();
       Serial.println("box up");
@@ -302,6 +310,7 @@ void VRC_Control(){
 
   else if(VRC_PS2.ButtonPressed(PSB_R2)){
     //Remove box
+    while(VRC_PS2.ButtonPressed(PSB_R2));
     if(pick_up_stt != PICK_DOWN){
       remove_box();
       Serial.println("box remove");
@@ -359,18 +368,21 @@ void VRC_Control(){
 
   //**************** Rotate windmill ****************** //
   if(VRC_PS2.ButtonPressed(PSB_L1)){
+    while(VRC_PS2.ButtonPressed(PSB_L1));
     //Rotate windmill
     if(rotate_stt == ROTATE_WINDMILL_OFF){
       VRC_Motor.Run(ROTATE_MOTOR,4000,1);
       rotate_stt = ROTATE_WINDMILL_ON;
       Serial.println("Rotate ON");
     }
-    else{
+
+    else {
       VRC_Motor.Stop(ROTATE_MOTOR);
       rotate_stt = ROTATE_WINDMILL_OFF;
       Serial.println("Rotate OFF");
     }
   }
+
   //*************** End rotate winmill **************** //
   }
 
@@ -436,6 +448,14 @@ void VRC_Control(){
 }
 
 void setup() {
+  // line
+  pinMode(S1, INPUT);
+  pinMode(S2, INPUT);
+  pinMode(S3, INPUT);
+  pinMode(S4, INPUT);
+  pinMode(S5, INPUT);
+
+
   // put your setup code here, to run once:
   Serial.begin(115200);
   GPIO_config();
@@ -444,6 +464,7 @@ void setup() {
   // VRC_MPU6050.initialize();
   // VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
   // VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+
   // led config
   FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
 

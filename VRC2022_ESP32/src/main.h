@@ -3,18 +3,18 @@
 
 
 //pin can be used GPIO, define your code here
-/*
-#define  pin1      18
-#define  pin2      19
-#define  pin3      23
-#define  pin4      5
-#define  pin5      27
-#define  pin6      26
-#define  pin7      33
-#define  pin8      34
-#define  pin9      35
 
-*/
+// #define  pin1      18
+// #define  pin2      19
+// #define  pin3      23
+// #define  pin4      5
+// #define  pin5      27
+// #define  pin6      26
+// #define  pin7      33
+// #define  pin8      34
+// #define  pin9      35
+
+
 //define pin to communicate with PS2 
 #define PS2_DAT 12 //MISO  19
 #define PS2_CMD 13 //MOSI  23
@@ -29,9 +29,18 @@
 //GPIO input output expansion
 #define MAX_END_STOP 26     // using for lift endstop
 #define MIN_END_STOP 27
+
 #define ANOTHER1   5       // modify your name pin define here
 #define ANOTHER2   23
 #define ANOTHER3   19
+
+//line
+
+#define S1 36
+#define S2 39
+#define S3 0
+#define S4 32
+#define S5 25
 
 //MODE
 #define AUTO        1
