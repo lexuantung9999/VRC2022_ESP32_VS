@@ -66,7 +66,7 @@
 #define PICK_UP_SERVO1   3
 #define PICK_UP_SERVO2   4
 
-#define SERVO1  1
+#define HOLDER_SERVO  1
 #define SERVO2  2
 
 // lift status
@@ -83,6 +83,9 @@
 #define ROTATE_WINDMILL_ON   1
 #define ROTATE_WINDMILL_OFF  0
 
+//HOLDER stt
+#define HOLD_ON 1
+#define HOLD_OFF 0
 #define END_STOP_CLICK 0
 #define END_STOP_RELEASE 1
 

@@ -25,11 +25,12 @@ bool dir_left, dir_right;
 
 int stt_servo = 0;
 int pick_up_stt = 0, rotate_stt = 0;
-
+bool holder_stt=0;
 bool mode;
 
 #ifndef MAX_PWM
   uint16_t MAX_PWM = 800;
+  uint16_t MAX_LIFT = 1200;
 #endif
 
 /*!
@@ -173,6 +174,8 @@ void stop_box(){
   pick_up_stt = PICK_STOP;
 }
 
+
+
 bool input[5];
 void line_following_auto(){
   // scan sensor:
@@ -211,6 +214,8 @@ void VRC_Control(){
     if(VRC_PS2.ButtonPressed(PSB_TRIANGLE)){
       while(VRC_PS2.ButtonPressed(PSB_TRIANGLE));
       MAX_PWM = MAX_PWM*2;
+      //MAX_LIFT = MAX_LIFT*2;
+
       if(MAX_PWM>800 && MAX_PWM<3600){
         led_all_color(255,180,0); //yellow led, middle speed
       }
@@ -219,6 +224,11 @@ void VRC_Control(){
         MAX_PWM = 3600;
         led_all_color(221,160,221); // violet led , max speed
       }
+
+      // if(MAX_LIFT>=3600){
+      //   MAX_LIFT=3600;
+      // }
+
       Serial.print("MAX PWM: ");
       Serial.println(MAX_PWM);
     }
@@ -227,6 +237,7 @@ void VRC_Control(){
       //change mode to LOW speed PWM max = 800
       //Slowest
       MAX_PWM = 800 ;
+      //MAX_LIFT = 1600;
       led_all_color(255,0,0); //green led, middle speed
       //VRC_Motor.Stop(LEFT_MOTOR);
       //VRC_Motor.Stop(RIGHT_MOTOR);
@@ -326,7 +337,7 @@ void VRC_Control(){
   // ******************** Control Lift ********************* //
   if(VRC_PS2.ButtonPressed(PSB_PAD_UP)){
     if(digitalRead(MAX_END_STOP) != LIFT_STOP){
-      VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
       Serial.println("Lift up");
       //VRC_Motor.lift_stt = LIFT_UP;
     }
@@ -334,7 +345,7 @@ void VRC_Control(){
 
   if(VRC_PS2.ButtonPressed(PSB_PAD_DOWN)){
     if(digitalRead(MIN_END_STOP) != LIFT_STOP){
-      VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,4000);
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,300);
       Serial.println("Lift down");
       //VRC_Motor.lift_stt = LIFT_DOWN;
     }
@@ -384,6 +395,26 @@ void VRC_Control(){
   }
 
   //*************** End rotate winmill **************** //
+
+  //**************** control box Holder ****************** //
+  if(VRC_PS2.ButtonPressed(PSB_R1)){
+    while(VRC_PS2.ButtonPressed(PSB_R1));
+    //Open
+    if(holder_stt == HOLD_ON){
+      VRC_Servo.Angle(80,HOLDER_SERVO);
+      holder_stt=!holder_stt;
+      Serial.println("Open ON");
+    }
+    //close
+    else {
+      VRC_Servo.Angle(180,HOLDER_SERVO);
+      holder_stt=!holder_stt;
+      Serial.println("Close OFF");
+    }
+  }
+
+  //*************** End control box holder **************** //
+  
   }
 
   else if (mode == AUTO){
