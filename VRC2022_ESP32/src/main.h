@@ -66,8 +66,9 @@
 #define PICK_UP_SERVO1   3
 #define PICK_UP_SERVO2   4
 
-#define HOLDER_SERVO  1
-#define SERVO2  2
+#define HOLDER_SERVO    1
+#define HOLDER_SERVO2   2
+
 
 // lift status
 #define LIFT_UP     1
@@ -89,5 +90,7 @@
 #define END_STOP_CLICK 0
 #define END_STOP_RELEASE 1
 
+//rotate speed Scale
+#define ROTATE_SPEED_SCALE 0.75
 int line[5]={25,32,36,0,2};
 #endif

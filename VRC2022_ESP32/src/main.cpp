@@ -29,8 +29,8 @@ bool holder_stt=0;
 bool mode;
 
 #ifndef MAX_PWM
-  uint16_t MAX_PWM = 800;
-  uint16_t MAX_LIFT = 1200;
+  uint16_t MAX_PWM = 700;
+  uint16_t MAX_LIFT = 1600;
 #endif
 
 /*!
@@ -93,24 +93,6 @@ void vTimerCallback(TimerHandle_t xTimer){
     if(ulCount==0){
        // Task 1
        VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
-
-        // **************** Safe endstop lift up and down ************* //
-        // if(VRC_Motor.lift_stt==LIFT_UP){
-        //   if(digitalRead(MAX_END_STOP)==0){
-        //     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-        //     Serial.println("Lift stop");
-        //     VRC_Motor.lift_stt = LIFT_STOP;
-        //   }
-        // }
-
-        // if(VRC_Motor.lift_stt== LIFT_DOWN){
-        //   if(digitalRead(MIN_END_STOP)==0){
-        //     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-        //     Serial.println("Lift stop");
-        //     VRC_Motor.lift_stt = LIFT_STOP;
-        //   }
-        // }
-        // ************ Safe function ***************** //
 
     }
 
@@ -243,6 +225,9 @@ void VRC_Control(){
       //VRC_Motor.Stop(RIGHT_MOTOR);
       Serial.print("RESET PWM: ");
       Serial.println(MAX_PWM);
+      stop_box();
+      VRC_Motor.Stop(LIFT_MOTOR);
+
     }
     //***************************** END SPEDD MODE ****************************//
 
@@ -260,7 +245,7 @@ void VRC_Control(){
     }
     else val_RY = 0;
     if(val_RX>=NOISE_J_UP || val_RX<=NOISE_J_DOWN){
-      val_RX = map(val_RX,0,255,MAX_PWM,-MAX_PWM);
+      val_RX = map(val_RX,0,255,MAX_PWM,-MAX_PWM)*ROTATE_SPEED_SCALE;
     }
     else val_RX=0;
 
@@ -347,6 +332,7 @@ void VRC_Control(){
     if(digitalRead(MIN_END_STOP) != LIFT_STOP){
       VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,300);
       Serial.println("Lift down");
+      pick_up_box();
       //VRC_Motor.lift_stt = LIFT_DOWN;
     }
   }
@@ -400,14 +386,16 @@ void VRC_Control(){
   if(VRC_PS2.ButtonPressed(PSB_R1)){
     while(VRC_PS2.ButtonPressed(PSB_R1));
     //Open
-    if(holder_stt == HOLD_ON){
-      VRC_Servo.Angle(80,HOLDER_SERVO);
+    if(holder_stt == HOLD_OFF){
+      VRC_Servo.Angle(180,HOLDER_SERVO);
+      VRC_Servo.Angle(60,HOLDER_SERVO2);
       holder_stt=!holder_stt;
       Serial.println("Open ON");
     }
     //close
     else {
-      VRC_Servo.Angle(180,HOLDER_SERVO);
+      VRC_Servo.Angle(60,HOLDER_SERVO);
+      VRC_Servo.Angle(180,HOLDER_SERVO2);
       holder_stt=!holder_stt;
       Serial.println("Close OFF");
     }
@@ -524,6 +512,8 @@ void setup() {
 
   VRC_Motor.Init();
   VRC_Servo.Init();
+  VRC_Servo.Angle(60,HOLDER_SERVO);
+  VRC_Servo.Angle(180,HOLDER_SERVO2);
 
   for(int i=0;i<10;i++){
     VRC_leds[i] = CRGB(0,255,0);

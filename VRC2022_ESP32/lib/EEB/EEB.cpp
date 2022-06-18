@@ -52,8 +52,8 @@ void DCMotor::Lift(int motor_number, int status, int16_t pwm_input){
         break;
 
         case LIFT_STOP:
-            pwm.setPWM(Motor_A[motor_number-1], 0, 4096);
-            pwm.setPWM(Motor_B[motor_number-1], 0, 4096);
+            pwm.setPWM(Motor_A[motor_number-1], 4096, 4096);
+            pwm.setPWM(Motor_B[motor_number-1], 4096, 4096);
             lift_stt = 0;
         break;
     }
