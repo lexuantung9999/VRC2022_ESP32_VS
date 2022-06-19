@@ -90,7 +90,8 @@
 #define END_STOP_CLICK 0
 #define END_STOP_RELEASE 1
 
+#define LIFT_DOWN_PWM 300
 //rotate speed Scale
 #define ROTATE_SPEED_SCALE 0.75
-int line[5]={25,32,36,0,2};
+int line[5]={2,39,25,32,36};
 #endif

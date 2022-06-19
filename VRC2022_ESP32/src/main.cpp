@@ -11,7 +11,7 @@
 #include <line_follow.h>
 
 #define GAMEPAD_LOG_INFO  0
-
+#define TEST_CASE 1 
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
 PS2X            VRC_PS2;
@@ -45,7 +45,7 @@ void GPIO_config(){
 }
 
 int16_t raw_ax, raw_ay, raw_az, raw_gx, raw_gy, raw_gz;
-float ax, ay, az, gx, gy, gz;
+int16_t ax, ay, az, gx, gy, gz;
 float off_set_ax, off_set_ay, off_set_az;
 float off_set_gx, off_set_gy, off_set_gz;
 float angle_gyro_x, angle_gyro_y, angle_gyro_z;
@@ -180,6 +180,18 @@ void line_following_auto(){
   
 }
 
+void read_line(){
+    bool a[5];
+  for(int i=0;i<5;i++){
+    a[i] = digitalRead(line[i]);
+    //Serial.print(digitalRead(line[i]));
+  }
+  //Serial.println();
+   
+  VRC_line_follow.calculate_output_control(6, a[0], a[1], a[2],a[3], a[4]);
+}
+int dirrection = 1;
+
 void VRC_Control(){
 
   if(VRC_PS2.ButtonPressed(PSB_CIRCLE)){
@@ -230,15 +242,29 @@ void VRC_Control(){
 
     }
     //***************************** END SPEDD MODE ****************************//
+  
+  // ********** dirrection Mode ***********
+    if(VRC_PS2.ButtonPressed(PSB_L3)){
+      dirrection = -1;
+    }
+    if(VRC_PS2.ButtonPressed(PSB_R3)){
+      dirrection = 1;
+    }
+  // ********** end dirrection mode ********************************//
 
   // ********************************** CONTROL MODE ****************************************** //  
   if(mode == MANUAL){
     // **************************** MOVING ROBOT ALGORITHM ********************// 
     int16_t val_RY, val_RX;
-
-    val_RY = VRC_PS2.Analog(PSS_RY);
-    val_RX = VRC_PS2.Analog(PSS_RX);
-
+    if(dirrection==1){
+      val_RY = VRC_PS2.Analog(PSS_RY);
+      val_RX = VRC_PS2.Analog(PSS_RX);
+    }
+    else{
+      val_RY = VRC_PS2.Analog(PSS_LY);
+      val_RX = VRC_PS2.Analog(PSS_LX);
+    }
+    
     // loc nhieu
     if(val_RY>=NOISE_J_UP || val_RY<=NOISE_J_DOWN){
       val_RY = map(val_RY,0,255,MAX_PWM,-MAX_PWM);
@@ -250,19 +276,24 @@ void VRC_Control(){
     else val_RX=0;
 
     // tinh toan
+
     if(val_RY>=0){
         pwm_left = val_RY - val_RX;
         pwm_right = val_RY + val_RX;
     }
+
     else{
        pwm_left = val_RY + val_RX;
        pwm_right = val_RY - val_RX; 
     }
 
+
     if(abs(pwm_left)<=MIN_PWM) pwm_left = 0;
     if(abs(pwm_right)<=MIN_PWM) pwm_right = 0;
+
     if(pwm_right>MAX_PWM ) pwm_right = MAX_PWM ;
     if(pwm_right<-MAX_PWM ) pwm_right = -MAX_PWM ;
+
     if(pwm_left>MAX_PWM ) pwm_left = MAX_PWM ;
     if(pwm_left<-MAX_PWM ) pwm_left = -MAX_PWM ;
 
@@ -342,6 +373,23 @@ void VRC_Control(){
     Serial.println("Lift stop");
     //VRC_Motor.lift_stt = LIFT_STOP;
   }
+
+  //******** Lift up down to pick box**********//
+  if(VRC_PS2.Button(PSB_PAD_LEFT)){
+    while(digitalRead(MIN_END_STOP) != LIFT_STOP){
+      pick_up_box();
+      VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,LIFT_DOWN_PWM);
+      // move down
+    }
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+    vTaskDelay(pdTICKS_TO_MS(500));
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
+    vTaskDelay(pdTICKS_TO_MS(1500));
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+    stop_box();
+  }
+
+
   // ************************ End Control Lift *******************//
 
   // **************** Safe endstop lift up and down ************* //
@@ -408,58 +456,50 @@ void VRC_Control(){
   else if (mode == AUTO){
     // ************************ AUTO MODE ***************************** //
     Serial.println("Auto Mode");
-    vTaskDelay(pdMS_TO_TICKS(2000));
     // vTaskDelay(pdMS_TO_TICKS(500));
-    // MAX_PWM = 800;
+    MAX_PWM = 600;
+    int i = 0;
+    //increase speed
+    for(i=0;i<=MAX_PWM;i+=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,1);
+      VRC_Motor.Run(RIGHT_MOTOR,i,1);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
 
-    // int i = 0;
-    // //increase speed
-    // for(i=0;i<=MAX_PWM;i+=5);
-    // {
-    //   VRC_Motor.Run(LEFT_MOTOR,i,0);
-    //   VRC_Motor.Run(RIGHT_MOTOR,i,0);
-    //   vTaskDelay(pdMS_TO_TICKS(5));
-    // }
-
-    // vTaskDelay(pdMS_TO_TICKS(1000));
-    // //decrease speed
-    // for(i;i>=0;i-=5);
-    // {
-    //   VRC_Motor.Run(LEFT_MOTOR,i,0);
-    //   VRC_Motor.Run(RIGHT_MOTOR,i,0);
-    //   vTaskDelay(pdMS_TO_TICKS(5));
-    // }
-
-    // // lift
-    // VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,4000);
-
-    // //while(digitalRead(MAX_END_STOP) != END_STOP_CLICK);
-    // vTaskDelay(pdMS_TO_TICKS(3000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    //decrease speed
+    for(i;i>=0;i-=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,1);
+      VRC_Motor.Run(RIGHT_MOTOR,i,1);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+    VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
     
-    // VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+    //pick up box
+    pick_up_box();
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    stop_box();
+    vTaskDelay(pdMS_TO_TICKS(200));  
 
-    // //pick up box
-    // pick_up_box();
-    // vTaskDelay(pdMS_TO_TICKS(3000));
-    // stop_box();
+    //increase speed
+    for(i=0;i<=MAX_PWM;i+=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,0);
+      VRC_Motor.Run(RIGHT_MOTOR,i,0);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
 
-    // //increase speed
-    // for(i=0;i<=MAX_PWM;i+=5);
-    // {
-    //   VRC_Motor.Run(LEFT_MOTOR,i,1);
-    //   VRC_Motor.Run(RIGHT_MOTOR,i,1);
-    //   vTaskDelay(pdMS_TO_TICKS(5));
-    // }
-
-    // vTaskDelay(pdMS_TO_TICKS(1000));
-    // //decrease speed
-    // for(i;i>=0;i-=5);
-    // {
-    //   VRC_Motor.Run(LEFT_MOTOR,i,1);
-    //   VRC_Motor.Run(RIGHT_MOTOR,i,1);
-    //   vTaskDelay(pdMS_TO_TICKS(5));
-    // }
-
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    //decrease speed
+    for(i;i>=0;i-=5);
+    {
+      VRC_Motor.Run(LEFT_MOTOR,i,0);
+      VRC_Motor.Run(RIGHT_MOTOR,i,0);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
+    VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
     mode = MANUAL;
     led_all_color(0,255,0);
 
@@ -479,11 +519,6 @@ void setup() {
   Serial.begin(115200);
   GPIO_config();
   
-  // MPU config
-  // VRC_MPU6050.initialize();
-  // VRC_MPU6050.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
-  // VRC_MPU6050.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-
   // led config
   FastLED.addLeds<WS2812, LED_PIN, GRB>(VRC_leds, NUM_LEDS);
 
@@ -501,7 +536,9 @@ void setup() {
     }
   }
 
-  //IMU_calculate_offset();
+    // MPU config
+  // VRC_MPU6050.initialize();
+  // IMU_calculate_offset();
 
     // Timer config
   xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
@@ -509,32 +546,67 @@ void setup() {
   
   // xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
   // xTimerStart(xTimers[1],0);
-
+#if !TEST_CASE
   VRC_Motor.Init();
   VRC_Servo.Init();
   VRC_Servo.Angle(60,HOLDER_SERVO);
   VRC_Servo.Angle(180,HOLDER_SERVO2);
 
+  // move lift to start postition
+  while(digitalRead(MIN_END_STOP) != LIFT_STOP){
+    VRC_Motor.Lift(LIFT_MOTOR,LIFT_DOWN,LIFT_DOWN_PWM);
+      // move down
+  }
+  VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+  vTaskDelay(pdTICKS_TO_MS(1000));
+  VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
+  vTaskDelay(pdTICKS_TO_MS(1500));
+  VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
+
   for(int i=0;i<10;i++){
     VRC_leds[i] = CRGB(0,255,0);
     FastLED.show();
   }
+  #endif 
 } 
 
 
 
 void loop() {
   // put your main code here, to run repeatedly:
-  VRC_Control();
 
-  VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-  VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+// ******************* CONTROL *************** //
+  // VRC_Control();
+  // if(dirrection==1){
+  //   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+  // }
+  // else{
+  //   VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
+  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
+  // }
+  // ********************** END CONTROL************* //
 
-  //VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  //sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
-  // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
+  //Serial.println(digitalRead(MAX_END_STOP));
+
+  // VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
+  // //sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
   // Serial.print(PS2_text);
 
+
+  // ****************** TEST LINE ********************* // 
+  // bool a[5];
+  // for(int i=0;i<5;i++){
+  //   a[i] = digitalRead(line[i]);
+  //   //Serial.print(digitalRead(line[i]));
+  // }
+  //Serial.println();
+   
+  //VRC_line_follow.calculate_output_control(6, a[0], a[1], a[2],a[3], a[4]);
+  // Serial.print(VRC_line_follow.left_pwm);
+  // Serial.print("  ");
+  // Serial.println(VRC_line_follow.right_pwm);
   //scan_i2c();
 
   //led_random_test();
