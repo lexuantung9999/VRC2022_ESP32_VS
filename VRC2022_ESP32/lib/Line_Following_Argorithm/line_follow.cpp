@@ -22,8 +22,15 @@ void line_follow::calculate_output_control(int16_t base_speed, float Kp, bool in
     
     else if(input3==1 && input4==0 && input2==0)         Err =0;
 
-    else if(input3==1 && input4==1 && input5==1)         Err =0; // cros, skip cross line
-    else if(input3==1 && input4==1 && input2==1)         Err =0;
+    else if(input3==1 && input4==1 && input5==1){
+        Err =0; 
+        cross = 1;
+    }
+        // cros, skip cross line
+    else if(input3==1 && input4==1 && input2==1){
+        Err =0;
+        cross = -1;
+    }
 
     else if(input1==1 && input2==0)                      Err =4;
     else if(input1==1 && input2==1 && input3==0)         Err =3;

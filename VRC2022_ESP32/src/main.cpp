@@ -513,12 +513,20 @@ void VRC_Control(){
       stop_box();
       vTaskDelay(pdMS_TO_TICKS(200));  
 
-      // sau khi nâng xong quay phải 1 khoảng và rời khỏi vùng auto
+      // sau khi nâng xong quay phải 1 khoảng và rời khỏi vùng auto nếu là sân xanh, sân đỏ thì quay trái
       // quay phải
-      VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,1);
-      VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,0);
-      vTaskDelay(pdMS_TO_TICKS(2000));
-      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      if(VRC_line_follow.cross==1){
+        VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,1);
+        VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,0);
+      }
+      else if (VRC_line_follow.cross==-1){
+        VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,0);
+        VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,1);
+      }
+      if(VRC_line_follow.cross!=0){
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      }
 
       // Rời khỏi khu vực auto
       for(i=0;i<=MAX_PWM+200;i+=5)
