@@ -14,6 +14,7 @@
 // #define  pin8      34
 // #define  pin9      35
 
+#define BASE_PWM_LINE   500
 
 //define pin to communicate with PS2 
 #define PS2_DAT 12 //MISO  19

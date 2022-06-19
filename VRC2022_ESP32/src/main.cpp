@@ -12,6 +12,7 @@
 
 #define GAMEPAD_LOG_INFO  0
 #define TEST_CASE 1 
+#define AUTO_LINE 1
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
 PS2X            VRC_PS2;
@@ -157,39 +158,6 @@ void stop_box(){
 }
 
 
-
-bool input[5];
-void line_following_auto(){
-  // scan sensor:
-  for(int i=0;i<5;i++){
-    input[i]=digitalRead(line[i]);
-  }
-  VRC_line_follow.calculate_output_control(15,input[0],input[1],input[2],input[3],input[4]);
-
-  pwm_left = BASE_LINE_PWM + VRC_line_follow.output;
-  pwm_right = BASE_LINE_PWM - VRC_line_follow.output;
-
-  if(pwm_left>=MAX_PWM) pwm_left = MAX_PWM;
-  if(pwm_left<=MIN_PWM) pwm_left = MIN_PWM;
-
-  if(pwm_right>=MAX_PWM) pwm_right = MAX_PWM;
-  if(pwm_right<=MIN_PWM) pwm_right = MIN_PWM;
-  
-  VRC_Motor.Run(LEFT_MOTOR,pwm_left,0);
-  VRC_Motor.Run(RIGHT_MOTOR,pwm_right,0);
-  
-}
-
-void read_line(){
-    bool a[5];
-  for(int i=0;i<5;i++){
-    a[i] = digitalRead(line[i]);
-    //Serial.print(digitalRead(line[i]));
-  }
-  //Serial.println();
-   
-  VRC_line_follow.calculate_output_control(6, a[0], a[1], a[2],a[3], a[4]);
-}
 int dirrection = 1;
 
 void VRC_Control(){
@@ -458,48 +426,110 @@ void VRC_Control(){
     Serial.println("Auto Mode");
     // vTaskDelay(pdMS_TO_TICKS(500));
     MAX_PWM = 600;
-    int i = 0;
-    //increase speed
-    for(i=0;i<=MAX_PWM;i+=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,1);
-      VRC_Motor.Run(RIGHT_MOTOR,i,1);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
 
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    //decrease speed
-    for(i;i>=0;i-=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,1);
-      VRC_Motor.Run(RIGHT_MOTOR,i,1);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
-    VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-    
-    //pick up box
-    pick_up_box();
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    stop_box();
-    vTaskDelay(pdMS_TO_TICKS(200));  
+    #if !AUTO_LINE
+      int i = 0;
+      //increase speed
+      for(i=0;i<=MAX_PWM;i+=5);
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,1);
+        VRC_Motor.Run(RIGHT_MOTOR,i,1);
+        vTaskDelay(pdMS_TO_TICKS(5));
+      }
 
-    //increase speed
-    for(i=0;i<=MAX_PWM;i+=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,0);
-      VRC_Motor.Run(RIGHT_MOTOR,i,0);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
+      vTaskDelay(pdMS_TO_TICKS(3000));
+      //decrease speed
+      for(i;i>=0;i-=5);
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,1);
+        VRC_Motor.Run(RIGHT_MOTOR,i,1);
+        vTaskDelay(pdMS_TO_TICKS(5));
+      }
+      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      
+      //pick up box
+      pick_up_box();
+      vTaskDelay(pdMS_TO_TICKS(3000));
+      stop_box();
+      vTaskDelay(pdMS_TO_TICKS(200));  
 
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    //decrease speed
-    for(i;i>=0;i-=5);
-    {
-      VRC_Motor.Run(LEFT_MOTOR,i,0);
-      VRC_Motor.Run(RIGHT_MOTOR,i,0);
-      vTaskDelay(pdMS_TO_TICKS(5));
-    }
-    VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      //increase speed
+      for(i=0;i<=MAX_PWM;i+=5);
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,0);
+        VRC_Motor.Run(RIGHT_MOTOR,i,0);
+        vTaskDelay(pdMS_TO_TICKS(5));
+      }
+
+      vTaskDelay(pdMS_TO_TICKS(3000));
+      //decrease speed
+      for(i;i>=0;i-=5);
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,0);
+        VRC_Motor.Run(RIGHT_MOTOR,i,0);
+        vTaskDelay(pdMS_TO_TICKS(5));
+      }
+      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+    #elif AUTO_LINE
+      int i = 0;
+      unsigned long time_end = 3000;
+      float Kp = 6.0; 
+      //increase speed
+      for(i=0;i<=MAX_PWM;i+=5)
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,0);
+        VRC_Motor.Run(RIGHT_MOTOR,i,0);
+        vTaskDelay(pdMS_TO_TICKS(2));
+      }
+
+      unsigned long times = millis(); // đánh dấu thời gian bắt đầu chạy vào line
+
+      // dò line, khi chạy đủ thời gian tự break vòng lặp while
+      while(millis() - times < time_end){
+          // scan sensor:
+        bool input[5];
+        
+        for(int i=0;i<5;i++){
+          input[i]=digitalRead(line[i]);
+        }
+        VRC_line_follow.calculate_output_control(BASE_LINE_PWM, Kp,input[0],input[1],input[2],input[3],input[4]);
+
+        if(VRC_line_follow.left_pwm>=MAX_PWM) VRC_line_follow.left_pwm = MAX_PWM;
+        if(VRC_line_follow.left_pwm<=MIN_PWM) VRC_line_follow.left_pwm = MIN_PWM;
+
+        if(VRC_line_follow.right_pwm>=MAX_PWM) VRC_line_follow.right_pwm = MAX_PWM;
+        if(VRC_line_follow.right_pwm<=MIN_PWM) VRC_line_follow.right_pwm = MIN_PWM;
+        
+        VRC_Motor.Run(LEFT_MOTOR,VRC_line_follow.left_pwm,0);
+        VRC_Motor.Run(RIGHT_MOTOR,VRC_line_follow.right_pwm,0);
+      }
+
+      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      
+      // sau khi hết thời gian, nâng hộp lên
+       //pick up box
+      pick_up_box();
+      vTaskDelay(pdMS_TO_TICKS(3000));
+      stop_box();
+      vTaskDelay(pdMS_TO_TICKS(200));  
+
+      // sau khi nâng xong quay phải 1 khoảng và rời khỏi vùng auto
+      // quay phải
+      VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,1);
+      VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,0);
+      vTaskDelay(pdMS_TO_TICKS(2000));
+      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+
+      // Rời khỏi khu vực auto
+      for(i=0;i<=MAX_PWM+200;i+=5)
+      {
+        VRC_Motor.Run(LEFT_MOTOR,i,1);
+        VRC_Motor.Run(RIGHT_MOTOR,i,1);
+      }
+      vTaskDelay(pdMS_TO_TICKS(3000));
+
+      // kết thúc auto,trả về mode manual
+    #endif
     mode = MANUAL;
     led_all_color(0,255,0);
 
@@ -603,7 +633,7 @@ void loop() {
   // }
   //Serial.println();
    
-  //VRC_line_follow.calculate_output_control(6, a[0], a[1], a[2],a[3], a[4]);
+  //VRC_line_follow.calculate_output_control(BASE_PWM_LINE, 6, a[0], a[1], a[2],a[3], a[4]);
   // Serial.print(VRC_line_follow.left_pwm);
   // Serial.print("  ");
   // Serial.println(VRC_line_follow.right_pwm);

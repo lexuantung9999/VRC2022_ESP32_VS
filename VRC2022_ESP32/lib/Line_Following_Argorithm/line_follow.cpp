@@ -14,7 +14,7 @@
 //
 
 
-void line_follow::calculate_output_control(float Kp, bool input1, bool input2, bool input3, bool input4, bool input5){
+void line_follow::calculate_output_control(int16_t base_speed, float Kp, bool input1, bool input2, bool input3, bool input4, bool input5){
     if(input5==1 && input4==0)                           Err =-4;
     else if(input4==1 && input5==1 && input3==0)         Err =-3;
     else if(input4==1 && input5==0 && input3==0)         Err =-2; 
@@ -37,8 +37,8 @@ void line_follow::calculate_output_control(float Kp, bool input1, bool input2, b
     }
 
     output = Kp*Err;
-    left_pwm = BASE_PWM_LINE + output;
-    right_pwm = BASE_PWM_LINE - output;
+    left_pwm = base_speed + output;
+    right_pwm = base_speed - output;
     preErr = Err;
 }
 
