@@ -11,7 +11,7 @@
 #include <line_follow.h>
 
 #define GAMEPAD_LOG_INFO  0
-#define TEST_CASE 1 
+#define TEST_CASE 0 
 #define AUTO_LINE 1
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
@@ -524,7 +524,7 @@ void VRC_Control(){
         VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,1);
       }
       if(VRC_line_follow.cross!=0){
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(500));
         VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
       }
 
@@ -614,15 +614,15 @@ void loop() {
   // put your main code here, to run repeatedly:
 
 // ******************* CONTROL *************** //
-  // VRC_Control();
-  // if(dirrection==1){
-  //   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
-  // }
-  // else{
-  //   VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
-  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
-  // }
+  VRC_Control();
+  if(dirrection==1){
+    VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+    VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+  }
+  else{
+    VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
+    VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
+  }
   // ********************** END CONTROL************* //
 
   //Serial.println(digitalRead(MAX_END_STOP));
