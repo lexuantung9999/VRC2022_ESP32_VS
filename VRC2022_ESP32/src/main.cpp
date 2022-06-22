@@ -85,7 +85,9 @@ void IMU_calculate_offset(void){
 
 
 TimerHandle_t xTimers[2]; // using 2 timer
-float alpha = 8.8;
+float Kp = 6.0; 
+int line_stt = 0;
+unsigned long time_line;
 void vTimerCallback(TimerHandle_t xTimer){
     configASSERT(xTimer);
     int ulCount = (uint32_t) pvTimerGetTimerID(xTimer);
@@ -97,16 +99,25 @@ void vTimerCallback(TimerHandle_t xTimer){
 
     }
 
-    //Timer 1 reading angle
-    // if(ulCount==1){
-    //    /*
-    //    Task2
-    //   //  */
-    //   VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
-    //   gz = (float)raw_gz/500 - off_set_gz;
-    //   angle_gyro_z = (float) timer_1*gz/1000;
-		// 	angle_z = (angle_z+angle_gyro_z);
-    // }
+    //Timer 1 calculate line following
+    if(ulCount==1){
+        bool input[5];
+        
+        if(millis() - time_line > 3000){
+          line_stt = 1;
+        }
+
+        for(int i=0;i<5;i++){
+          input[i]=digitalRead(line[i]);
+        }
+        VRC_line_follow.calculate_output_control(BASE_LINE_PWM, Kp,input[0],input[1],input[2],input[3],input[4]);
+
+        if(VRC_line_follow.left_pwm>=MAX_PWM) VRC_line_follow.left_pwm = MAX_PWM;
+        if(VRC_line_follow.left_pwm<=MIN_PWM) VRC_line_follow.left_pwm = MIN_PWM;
+
+        if(VRC_line_follow.right_pwm>=MAX_PWM) VRC_line_follow.right_pwm = MAX_PWM;
+        if(VRC_line_follow.right_pwm<=MIN_PWM) VRC_line_follow.right_pwm = MIN_PWM;
+    }
 }
 
 void led_random_test(void){
@@ -350,9 +361,9 @@ void VRC_Control(){
       // move down
     }
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-    vTaskDelay(pdTICKS_TO_MS(500));
+    vTaskDelay(pdMS_TO_TICKS(500));
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
-    vTaskDelay(pdTICKS_TO_MS(1500));
+    vTaskDelay(pdMS_TO_TICKS(1500));
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
     stop_box();
   }
@@ -471,43 +482,28 @@ void VRC_Control(){
       }
       VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
     #elif AUTO_LINE
+      //increase speed, tăng tốc chạy vào line
       int i = 0;
-      unsigned long time_end = 3000;
-      float Kp = 6.0; 
-      //increase speed
       for(i=0;i<=MAX_PWM;i+=5)
       {
         VRC_Motor.Run(LEFT_MOTOR,i,0);
         VRC_Motor.Run(RIGHT_MOTOR,i,0);
         vTaskDelay(pdMS_TO_TICKS(2));
       }
-
-      unsigned long times = millis(); // đánh dấu thời gian bắt đầu chạy vào line
-
-      // dò line, khi chạy đủ thời gian tự break vòng lặp while
-      while(millis() - times < time_end){
-          // scan sensor:
-        bool input[5];
-        
-        for(int i=0;i<5;i++){
-          input[i]=digitalRead(line[i]);
-        }
-        VRC_line_follow.calculate_output_control(BASE_LINE_PWM, Kp,input[0],input[1],input[2],input[3],input[4]);
-
-        if(VRC_line_follow.left_pwm>=MAX_PWM) VRC_line_follow.left_pwm = MAX_PWM;
-        if(VRC_line_follow.left_pwm<=MIN_PWM) VRC_line_follow.left_pwm = MIN_PWM;
-
-        if(VRC_line_follow.right_pwm>=MAX_PWM) VRC_line_follow.right_pwm = MAX_PWM;
-        if(VRC_line_follow.right_pwm<=MIN_PWM) VRC_line_follow.right_pwm = MIN_PWM;
-        
+      //chạy vào line, start timer
+      xTimerStart(xTimers[1],0);
+      time_line = millis();
+      while(line_stt == 0){
         VRC_Motor.Run(LEFT_MOTOR,VRC_line_follow.left_pwm,0);
         VRC_Motor.Run(RIGHT_MOTOR,VRC_line_follow.right_pwm,0);
       }
 
+      //het thoi gian trong line, dung lai
       VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-      
+      xTimerStop(xTimers[1],0);
+
       // sau khi hết thời gian, nâng hộp lên
-       //pick up box
+      // pick up box
       pick_up_box();
       vTaskDelay(pdMS_TO_TICKS(3000));
       stop_box();
@@ -574,7 +570,7 @@ void setup() {
   xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
   xTimerStart(xTimers[0],0);
   
-  // xTimers[ 1 ] = xTimerCreate("Z Angle Read",pdMS_TO_TICKS(timer_1),pdTRUE,( void * ) 1,vTimerCallback);
+  xTimers[ 1 ] = xTimerCreate("Timer Line Following",pdMS_TO_TICKS(50),pdTRUE,( void * ) 1,vTimerCallback);
   // xTimerStart(xTimers[1],0);
 #if !TEST_CASE
   VRC_Motor.Init();
@@ -588,9 +584,9 @@ void setup() {
       // move down
   }
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-  vTaskDelay(pdTICKS_TO_MS(1000));
+  vTaskDelay(pdMS_TO_TICKS(1000));
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
-  vTaskDelay(pdTICKS_TO_MS(1500));
+  vTaskDelay(pdMS_TO_TICKS(1500));
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
 
   for(int i=0;i<10;i++){
