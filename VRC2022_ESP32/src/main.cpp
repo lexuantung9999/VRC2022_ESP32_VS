@@ -545,14 +545,6 @@ void VRC_Control(){
 }
 
 void setup() {
-  // line
-  pinMode(S1, INPUT);
-  pinMode(S2, INPUT);
-  pinMode(S3, INPUT);
-  pinMode(S4, INPUT);
-  pinMode(S5, INPUT);
-
-
   // put your setup code here, to run once:
   Serial.begin(115200);
   GPIO_config();
