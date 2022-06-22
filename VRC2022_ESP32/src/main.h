@@ -92,5 +92,5 @@
 #define LIFT_DOWN_PWM 300
 //rotate speed Scale
 #define ROTATE_SPEED_SCALE 0.75
-int line[5]={2,39,25,32,36};
+int line[5]={0,39,25,32,36};
 #endif

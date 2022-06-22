@@ -11,7 +11,7 @@
 #include <line_follow.h>
 
 #define GAMEPAD_LOG_INFO  0
-#define TEST_CASE 0 
+#define TEST_CASE 1 
 #define AUTO_LINE 1
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
@@ -58,29 +58,9 @@ void IMU_calculate_offset(void){
 	int f  = 500;
 	for(int i=0;i<f;i++){
       VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
-
-			// off_set_ax += (float) raw_ax/4096;
-			// off_set_ay += (float) raw_ay/4096;
-			// off_set_az += (float) raw_az/4096-1;
-		
-			// off_set_gx += (float) raw_gx/500;
-			// off_set_gy += (float) raw_gy/500;
 			off_set_gz += (float) raw_gz/500;
-      
-      // sprintf(PS2_text,"\n Accel: ax: %f, ay: %f  az: %f \n",off_set_ax,off_set_ay,off_set_az);
-      // Serial.print(PS2_text);
 	}
-			// off_set_ax = (float) off_set_ax/f;
-			// off_set_ay = (float) off_set_ay/f;
-			// off_set_az = (float) off_set_az/f;
-			// off_set_gx = (float) off_set_gx/f;
-			// off_set_gy = (float) off_set_gy/f;
 			off_set_gz = (float) off_set_gz/f;	
-
-      // sprintf(PS2_text,"\n Offset Accel: ax: %f, ay: %f  az: %f \n",off_set_ax,off_set_ay,off_set_az);
-      // Serial.print(PS2_text);
-      // sprintf(PS2_text,"\n Offset Gyro: gx: %f, gy: %f  gz: %f \n",off_set_gx,off_set_gy,off_set_gz);
-      // Serial.print(PS2_text);
 }
 
 
@@ -95,7 +75,7 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
 
     }
 
@@ -602,15 +582,15 @@ void loop() {
   // put your main code here, to run repeatedly:
 
 // ******************* CONTROL *************** //
-  VRC_Control();
-  if(dirrection==1){
-    VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-    VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
-  }
-  else{
-    VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
-    VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
-  }
+  // VRC_Control();
+  // if(dirrection==1){
+  //   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+  // }
+  // else{
+  //   VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
+  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
+  // }
   // ********************** END CONTROL************* //
 
   //Serial.println(digitalRead(MAX_END_STOP));
@@ -622,17 +602,17 @@ void loop() {
 
 
   // ****************** TEST LINE ********************* // 
-  // bool a[5];
+  bool a[5];
   // for(int i=0;i<5;i++){
   //   a[i] = digitalRead(line[i]);
-  //   //Serial.print(digitalRead(line[i]));
+  //   Serial.print(digitalRead(line[i]));
   // }
-  //Serial.println();
+  // Serial.println();
    
-  //VRC_line_follow.calculate_output_control(BASE_PWM_LINE, 6, a[0], a[1], a[2],a[3], a[4]);
-  // Serial.print(VRC_line_follow.left_pwm);
-  // Serial.print("  ");
-  // Serial.println(VRC_line_follow.right_pwm);
+  VRC_line_follow.calculate_output_control(BASE_LINE_PWM, 6, a[0], a[1], a[2],a[3], a[4]);
+  Serial.print(VRC_line_follow.left_pwm);
+  Serial.print("  ");
+  Serial.println(VRC_line_follow.right_pwm);
   //scan_i2c();
 
   //led_random_test();
