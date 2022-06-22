@@ -6,18 +6,15 @@
 #include <malloc.h>
 #include <math.h>
 #include <FastLED.h>
-#include <MPU6050.h>
-#include <I2Cdev.h>
 #include <line_follow.h>
 
 #define GAMEPAD_LOG_INFO  0
-#define TEST_CASE 1 
-#define AUTO_LINE 1
+#define TEST_CASE 0
+
 DCMotor         VRC_Motor;
 Servo_Motor     VRC_Servo;
 PS2X            VRC_PS2;
 CRGB            VRC_leds[NUM_LEDS];
-MPU6050         VRC_MPU6050;
 line_follow     VRC_line_follow;
 
 char PS2_text[100];
@@ -27,7 +24,7 @@ bool dir_left, dir_right;
 int stt_servo = 0;
 int pick_up_stt = 0, rotate_stt = 0;
 bool holder_stt=0;
-bool mode;
+int mode;
 
 #ifndef MAX_PWM
   uint16_t MAX_PWM = 700;
@@ -39,35 +36,17 @@ bool mode;
 */
 void GPIO_config(){
   pinMode(MAX_END_STOP, INPUT_PULLUP); pinMode(MIN_END_STOP, INPUT_PULLUP); 
-  pinMode(ANOTHER1, OUTPUT); pinMode(ANOTHER2, OUTPUT); pinMode(ANOTHER3, OUTPUT); 
+
   for(int i=0;i<5;i++){
     pinMode(line[i],INPUT);
   }
 }
 
-int16_t raw_ax, raw_ay, raw_az, raw_gx, raw_gy, raw_gz;
-int16_t ax, ay, az, gx, gy, gz;
-float off_set_ax, off_set_ay, off_set_az;
-float off_set_gx, off_set_gy, off_set_gz;
-float angle_gyro_x, angle_gyro_y, angle_gyro_z;
-float angle_acc_x, angle_acc_y, angle_acc_z;
-float angle_x, angle_y, angle_z;
-
-int timer_1 = 50;
-void IMU_calculate_offset(void){
-	int f  = 500;
-	for(int i=0;i<f;i++){
-      VRC_MPU6050.getMotion6(&raw_ax, &raw_ay, &raw_az, &raw_gx, &raw_gy, &raw_gz);
-			off_set_gz += (float) raw_gz/500;
-	}
-			off_set_gz = (float) off_set_gz/f;	
-}
-
-
 TimerHandle_t xTimers[2]; // using 2 timer
 float Kp = 6.0; 
 int line_stt = 0;
-unsigned long time_line;
+unsigned long long time_line;
+
 void vTimerCallback(TimerHandle_t xTimer){
     configASSERT(xTimer);
     int ulCount = (uint32_t) pvTimerGetTimerID(xTimer);
@@ -75,28 +54,35 @@ void vTimerCallback(TimerHandle_t xTimer){
     //timer 0 reading gamepad
     if(ulCount==0){
        // Task 1
-       //VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
-
+      #if !TEST_CASE
+        VRC_PS2.read_gamepad(0, 0); // khong co PS2 thi ham nay khong chay thanh cong, bi treo
+      #endif
     }
 
     //Timer 1 calculate line following
     if(ulCount==1){
-        bool input[5];
-        
-        if(millis() - time_line > 3000){
+        if(millis() - time_line < 3000){
+            
+            Serial.println("Calculate line control");
+            bool input[5];
+            for(int i=0;i<5;i++){
+            input[i]=digitalRead(line[i]);
+          }
+          VRC_line_follow.calculate_output_control(BASE_LINE_PWM, Kp,input[0],input[1],input[2],input[3],input[4]);
+
+          if(VRC_line_follow.left_pwm>=MAX_PWM) VRC_line_follow.left_pwm = MAX_PWM;
+          if(VRC_line_follow.left_pwm<=MIN_PWM) VRC_line_follow.left_pwm = MIN_PWM;
+
+          if(VRC_line_follow.right_pwm>=MAX_PWM) VRC_line_follow.right_pwm = MAX_PWM;
+          if(VRC_line_follow.right_pwm<=MIN_PWM) VRC_line_follow.right_pwm = MIN_PWM;
+        }
+
+        else{
           line_stt = 1;
+          xTimerStop(xTimers[1],portMAX_DELAY);
         }
 
-        for(int i=0;i<5;i++){
-          input[i]=digitalRead(line[i]);
-        }
-        VRC_line_follow.calculate_output_control(BASE_LINE_PWM, Kp,input[0],input[1],input[2],input[3],input[4]);
 
-        if(VRC_line_follow.left_pwm>=MAX_PWM) VRC_line_follow.left_pwm = MAX_PWM;
-        if(VRC_line_follow.left_pwm<=MIN_PWM) VRC_line_follow.left_pwm = MIN_PWM;
-
-        if(VRC_line_follow.right_pwm>=MAX_PWM) VRC_line_follow.right_pwm = MAX_PWM;
-        if(VRC_line_follow.right_pwm<=MIN_PWM) VRC_line_follow.right_pwm = MIN_PWM;
     }
 }
 
@@ -417,104 +403,81 @@ void VRC_Control(){
     Serial.println("Auto Mode");
     // vTaskDelay(pdMS_TO_TICKS(500));
     MAX_PWM = 600;
-
-    #if !AUTO_LINE
-      int i = 0;
-      //increase speed
-      for(i=0;i<=MAX_PWM;i+=5);
-      {
-        VRC_Motor.Run(LEFT_MOTOR,i,1);
-        VRC_Motor.Run(RIGHT_MOTOR,i,1);
-        vTaskDelay(pdMS_TO_TICKS(5));
-      }
-
-      vTaskDelay(pdMS_TO_TICKS(3000));
-      //decrease speed
-      for(i;i>=0;i-=5);
-      {
-        VRC_Motor.Run(LEFT_MOTOR,i,1);
-        VRC_Motor.Run(RIGHT_MOTOR,i,1);
-        vTaskDelay(pdMS_TO_TICKS(5));
-      }
-      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-      
-      //pick up box
-      pick_up_box();
-      vTaskDelay(pdMS_TO_TICKS(3000));
-      stop_box();
-      vTaskDelay(pdMS_TO_TICKS(200));  
-
-      //increase speed
-      for(i=0;i<=MAX_PWM;i+=5);
-      {
-        VRC_Motor.Run(LEFT_MOTOR,i,0);
-        VRC_Motor.Run(RIGHT_MOTOR,i,0);
-        vTaskDelay(pdMS_TO_TICKS(5));
-      }
-
-      vTaskDelay(pdMS_TO_TICKS(3000));
-      //decrease speed
-      for(i;i>=0;i-=5);
-      {
-        VRC_Motor.Run(LEFT_MOTOR,i,0);
-        VRC_Motor.Run(RIGHT_MOTOR,i,0);
-        vTaskDelay(pdMS_TO_TICKS(5));
-      }
-      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-    #elif AUTO_LINE
       //increase speed, tăng tốc chạy vào line
       int i = 0;
       for(i=0;i<=MAX_PWM;i+=5)
       {
-        VRC_Motor.Run(LEFT_MOTOR,i,0);
-        VRC_Motor.Run(RIGHT_MOTOR,i,0);
-        vTaskDelay(pdMS_TO_TICKS(2));
+        Serial.println("Step 1, INCREASE SPEED");
+        #if !TEST_CASE
+          VRC_Motor.Run(LEFT_MOTOR,i,1);
+          VRC_Motor.Run(RIGHT_MOTOR,i,1);
+          vTaskDelay(pdMS_TO_TICKS(2));
+        #endif 
       }
+      vTaskDelay(pdMS_TO_TICKS(5000));
+
       //chạy vào line, start timer
+      Serial.println("STEP2, START TIMER");
       xTimerStart(xTimers[1],0);
       time_line = millis();
+
       while(line_stt == 0){
-        VRC_Motor.Run(LEFT_MOTOR,VRC_line_follow.left_pwm,0);
-        VRC_Motor.Run(RIGHT_MOTOR,VRC_line_follow.right_pwm,0);
+        Serial.println("STEP3, IN while line =0, running");
+        #if !TEST_CASE
+          VRC_Motor.Run(LEFT_MOTOR,VRC_line_follow.left_pwm,1);
+          VRC_Motor.Run(RIGHT_MOTOR,VRC_line_follow.right_pwm,1);
+        #endif
       }
+
+      Serial.println("STEP4, STOP TIMER");
+      xTimerStop(xTimers[1],portMAX_DELAY);
+
 
       //het thoi gian trong line, dung lai
-      VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-      xTimerStop(xTimers[1],0);
-
+      #if !TEST_CASE
+        VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+      #endif
       // sau khi hết thời gian, nâng hộp lên
       // pick up box
-      pick_up_box();
-      vTaskDelay(pdMS_TO_TICKS(3000));
-      stop_box();
-      vTaskDelay(pdMS_TO_TICKS(200));  
+      Serial.println("STEP5, PICKUP box and run out");
+      #if !TEST_CASE
+        pick_up_box();
+        vTaskDelay(pdMS_TO_TICKS(3000));
+        stop_box();
+        vTaskDelay(pdMS_TO_TICKS(200));  
 
-      // sau khi nâng xong quay phải 1 khoảng và rời khỏi vùng auto nếu là sân xanh, sân đỏ thì quay trái
-      // quay phải
-      if(VRC_line_follow.cross==1){
-        VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,1);
-        VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,0);
-      }
-      else if (VRC_line_follow.cross==-1){
-        VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,0);
-        VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,1);
-      }
-      if(VRC_line_follow.cross!=0){
-        vTaskDelay(pdMS_TO_TICKS(500));
-        VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
-      }
+        // sau khi nâng xong quay phải 1 khoảng và rời khỏi vùng auto nếu là sân xanh, sân đỏ thì quay trái
+        // quay phải
+        if(VRC_line_follow.cross==1){
+          VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,1);
+          VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,0);
+        }
+        else if (VRC_line_follow.cross==-1){
+          VRC_Motor.Run(LEFT_MOTOR,MAX_PWM,0);
+          VRC_Motor.Run(RIGHT_MOTOR,MAX_PWM,1);
+        }
+        if(VRC_line_follow.cross!=0){
+          vTaskDelay(pdMS_TO_TICKS(500));
+          VRC_Motor.Stop(LEFT_MOTOR); VRC_Motor.Stop(RIGHT_MOTOR);
+        }
 
-      // Rời khỏi khu vực auto
-      for(i=0;i<=MAX_PWM+200;i+=5)
-      {
-        VRC_Motor.Run(LEFT_MOTOR,i,1);
-        VRC_Motor.Run(RIGHT_MOTOR,i,1);
-      }
-      vTaskDelay(pdMS_TO_TICKS(3000));
+        // Rời khỏi khu vực auto
+        for(i=0;i<=MAX_PWM+200;i+=5)
+        {
+          VRC_Motor.Run(LEFT_MOTOR,i,0);
+          VRC_Motor.Run(RIGHT_MOTOR,i,0);
+        }
+        vTaskDelay(pdMS_TO_TICKS(3000));
+      #endif
 
       // kết thúc auto,trả về mode manual
+    #if !TEST_CASE
+      mode = MANUAL;
+      Serial.println("END ALL LINE");
+    #elif TEST_CASE
+      mode = -2;
+      Serial.println("END ALL LINE");
     #endif
-    mode = MANUAL;
     led_all_color(0,255,0);
 
   }
@@ -532,19 +495,17 @@ void setup() {
   int err = -1;
   led_random_test();
 
-  for(int i=0; i<10; i++){
-    delay(100);
-    err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
-    Serial.print(".");
-    if(!err){
-      Serial.println("Sucsessfully Connect PS2 Controller!");
-      break;
+  #if !TEST_CASE
+    for(int i=0; i<10; i++){
+      delay(100);
+      err = VRC_PS2.config_gamepad(PS2_CLK, PS2_CMD, PS2_SEL, PS2_DAT, pressures, rumble);
+      Serial.print(".");
+      if(!err){
+        Serial.println("Sucsessfully Connect PS2 Controller!");
+        break;
+      }
     }
-  }
-
-    // MPU config
-  // VRC_MPU6050.initialize();
-  // IMU_calculate_offset();
+  #endif
 
     // Timer config
   xTimers[ 0 ] = xTimerCreate("Timer PS2",pdMS_TO_TICKS(100),pdTRUE,( void * ) 0,vTimerCallback);
@@ -552,6 +513,7 @@ void setup() {
   
   xTimers[ 1 ] = xTimerCreate("Timer Line Following",pdMS_TO_TICKS(50),pdTRUE,( void * ) 1,vTimerCallback);
   // xTimerStart(xTimers[1],0);
+
 #if !TEST_CASE
   VRC_Motor.Init();
   VRC_Servo.Init();
@@ -573,7 +535,11 @@ void setup() {
     VRC_leds[i] = CRGB(0,255,0);
     FastLED.show();
   }
+  #elif TEST_CASE
+    mode = AUTO;
   #endif 
+
+  Serial.println("Done Setup");
 } 
 
 
@@ -582,19 +548,20 @@ void loop() {
   // put your main code here, to run repeatedly:
 
 // ******************* CONTROL *************** //
-  // VRC_Control();
-  // if(dirrection==1){
-  //   VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
-  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
-  // }
-  // else{
-  //   VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
-  //   VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
-  // }
+  VRC_Control();
+  #if !TEST_CASE
+    if(dirrection==1){
+      VRC_Motor.Run(LEFT_MOTOR,pwm_left,dir_left);
+      VRC_Motor.Run(RIGHT_MOTOR,pwm_right,dir_right);
+    }
+    else{
+      VRC_Motor.Run(LEFT_MOTOR,pwm_right,!dir_right);
+      VRC_Motor.Run(RIGHT_MOTOR,pwm_left,!dir_left);
+    }
+  #endif
   // ********************** END CONTROL************* //
 
   //Serial.println(digitalRead(MAX_END_STOP));
-
   // VRC_MPU6050.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",(float)ax/4096,(float)ay/4096,(float)az/4096);
   // //sprintf(PS2_text,"Accel: ax: %f, ay: %f  az: %f \n",angle_x,angle_y,alpha*angle_z);
@@ -602,17 +569,18 @@ void loop() {
 
 
   // ****************** TEST LINE ********************* // 
-  bool a[5];
+  // bool a[5];
   // for(int i=0;i<5;i++){
   //   a[i] = digitalRead(line[i]);
   //   Serial.print(digitalRead(line[i]));
   // }
   // Serial.println();
    
-  VRC_line_follow.calculate_output_control(BASE_LINE_PWM, 6, a[0], a[1], a[2],a[3], a[4]);
-  Serial.print(VRC_line_follow.left_pwm);
-  Serial.print("  ");
-  Serial.println(VRC_line_follow.right_pwm);
+  // VRC_line_follow.calculate_output_control(BASE_LINE_PWM, 6, a[0], a[1], a[2],a[3], a[4]);
+  // Serial.println(VRC_line_follow.Err);
+  // Serial.print(VRC_line_follow.left_pwm);
+  // Serial.print("  ");
+  // Serial.println(VRC_line_follow.right_pwm);
   //scan_i2c();
 
   //led_random_test();

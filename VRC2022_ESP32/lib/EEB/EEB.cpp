@@ -1,5 +1,4 @@
 #include <EEB.h>
-#include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <math.h>
 
