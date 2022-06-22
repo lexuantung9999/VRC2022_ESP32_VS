@@ -350,9 +350,9 @@ void VRC_Control(){
       // move down
     }
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-    vTaskDelay(pdTICKS_TO_MS(500));
+    vTaskDelay(pdMS_TO_TICKS(500));
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
-    vTaskDelay(pdTICKS_TO_MS(1500));
+    vTaskDelay(pdMS_TO_TICKS(1500));
     VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
     stop_box();
   }
@@ -596,9 +596,9 @@ void setup() {
       // move down
   }
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
-  vTaskDelay(pdTICKS_TO_MS(1000));
+  vTaskDelay(pdMS_TO_TICKS(1000));
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_UP,MAX_LIFT);
-  vTaskDelay(pdTICKS_TO_MS(1500));
+  vTaskDelay(pdMS_TO_TICKS(1500));
   VRC_Motor.Lift(LIFT_MOTOR,LIFT_STOP,0);
 
   for(int i=0;i<10;i++){
