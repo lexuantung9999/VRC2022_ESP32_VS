@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "VRC2022_ESP32",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"esp_bt_device.h": "c",
+			"*.inc": "c",
+			"freertos.h": "c"
+		}
+	}
+}
